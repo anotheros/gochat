@@ -28,6 +28,8 @@ var once sync.Once
 type RpcConnect struct {
 }
 
+var rpcConnectObj *RpcConnect
+
 func (c *Connect) InitLogicRpcClient() (err error) {
 	once.Do(func() {
 		d := client.NewEtcdV3Discovery(
@@ -37,6 +39,7 @@ func (c *Connect) InitLogicRpcClient() (err error) {
 			nil,
 		)
 		logicRpcClient = client.NewXClient(config.Conf.Common.CommonEtcd.ServerPathLogic, client.Failtry, client.RandomSelect, d, client.DefaultOption)
+		rpcConnectObj = new(RpcConnect)
 	})
 	if logicRpcClient == nil {
 		return errors.New("get rpc client nil")
@@ -62,6 +65,25 @@ func (rpc *RpcConnect) DisConnect(disConnReq *proto.DisConnectRequest) (err erro
 	}
 	return
 }
+
+func (rpc *RpcConnect) CheckAuth(checkAuthReq *proto.CheckAuthRequest) ( *proto.CheckAuthResponse, error) {
+	reply := &proto.CheckAuthResponse{}
+	err := logicRpcClient.Call(context.Background(), "CheckAuth", checkAuthReq, reply)
+	if err != nil {
+		logrus.Fatalf("failed to call CheckAuth: %v", err)
+	}
+	return reply,err
+}
+
+func (rpc *RpcConnect) OnMessage(mgRequest *proto.MsgRequest) (reply *proto.SuccessReply,err error) {
+
+	err = logicRpcClient.Call(context.Background(), "OnMessage", mgRequest, &reply)
+	if err != nil {
+		logrus.Fatalf("failed to call OnMessage: %v", err)
+	}
+	return
+}
+
 
 func (c *Connect) InitConnectRpcServer() (err error) {
 	var network, addr string

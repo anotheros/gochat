@@ -6,17 +6,50 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
-	"fmt"
 	"gochat/api"
 	"gochat/connect"
-	"gochat/logic"
 	"gochat/site"
 	"gochat/task"
+
+	//"flag"
+	"fmt"
+	"github.com/sirupsen/logrus"
+	//"gochat/api"
+	//"gochat/connect"
+	"gochat/logic"
+	"gochat/proto"
+	//"gochat/site"
+	//"gochat/task"
 	"os"
 	"os/signal"
 	"syscall"
 )
+
+func main2()  {
+	var send proto.Send
+	a := `{"op":3,"msg":"123","roomId":1}`
+	err :=json.Unmarshal([]byte(a),&send)
+	if err != nil {
+		logrus.Errorf("logic,OnMessage fail,err:%s", err.Error())
+		return
+	}
+	fmt.Print(send)
+
+	push(&send)
+}
+
+func push(send *proto.Send)  {
+	sendData := send
+	var bodyBytes2 []byte
+	bodyBytes2, err := json.Marshal(sendData)
+	if err != nil {
+		logrus.Errorf("logic,push msg fail,err:%s", err.Error())
+		return
+	}
+	logrus.Info(string(bodyBytes2))
+}
 
 func main() {
 	var module string

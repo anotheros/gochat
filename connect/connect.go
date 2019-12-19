@@ -42,6 +42,9 @@ func (c *Connect) Run() {
 			RoutineSize:   connectConfig.ConnectBucket.RoutineSize,
 		})
 	}
+
+	//var dispatcher = NewDispatcher(MaxWorker)
+	//dispatcher.Run()
 	operator := new(DefaultOperator)
 	DefaultServer = NewServer(Buckets, operator, ServerOptions{
 		WriteWait:       10 * time.Second,

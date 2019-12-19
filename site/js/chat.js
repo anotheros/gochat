@@ -1,4 +1,4 @@
-let websocket = new WebSocket(socketUrl);
+var websocket
 $(document).ready(function () {
     let auth = getLocalStorage("authToken");
     let jsonData = {"authToken": auth};
@@ -27,12 +27,13 @@ $(document).ready(function () {
             swal("sorry, exception!");
         }
     });
-
+     websocket = new WebSocket(socketUrl + "?auth=" + auth);
     let data = {"authToken": getLocalStorage("authToken"), "roomId": 1};
+    let data2 ={op: 3, msg: "大家好", roomId: 1}
     //websocket onopen
     websocket.onopen = function (evt) {
-        websocket.send(JSON.stringify(data));
-        getRoomInfo();
+        websocket.send(JSON.stringify(data2));
+        //getRoomInfo();
     };
 
     websocket.onmessage = function (evt) {
@@ -115,8 +116,8 @@ function send() {
         return
     }
     document.getElementById('editText').value = '';
-    let jsonData = {op: 3, msg: msg, roomId: 1, authToken: getLocalStorage("authToken")};
-    $.ajax({
+    let jsonData = {op: 3, msg: msg, roomId: 1};
+    /**$.ajax({
         type: "POST",
         dataType: "json",
         url: apiUrl + "/push/pushRoom",
@@ -132,7 +133,8 @@ function send() {
         error: function () {
             swal("sorry, exception！");
         }
-    });
+    });**/
+    websocket.send(JSON.stringify(jsonData));
 }
 
 

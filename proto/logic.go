@@ -54,9 +54,14 @@ type CheckAuthResponse struct {
 }
 
 type ConnectRequest struct {
-	AuthToken string `json:"authToken"`
+	UserId    int    `json:"userId"`
 	RoomId    int    `json:"roomId"`
 	ServerId  int    `json:"serverId"`
+}
+
+type MsgRequest struct {
+	UserId    int    `json:"userId"`
+	Msg    []byte    `json:"msg"`
 }
 
 type ConnectReply struct {
@@ -73,6 +78,7 @@ type DisConnectReply struct {
 }
 
 type Send struct {
+	AuthToken    string `json:"authToken"`
 	Code         int    `json:"code"`
 	Msg          string `json:"msg"`
 	FromUserId   int    `json:"fromUserId"`

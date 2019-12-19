@@ -114,6 +114,10 @@ func (rpc *RpcLogic) GetUserInfoByUserId(ctx context.Context, args *proto.GetUse
 func (rpc *RpcLogic) CheckAuth(ctx context.Context, args *proto.CheckAuthRequest, reply *proto.CheckAuthResponse) (err error) {
 	reply.Code = config.FailReplyCode
 	authToken := args.AuthToken
+	logrus.Infof("logic CheckAuth ,authToken is:%s", authToken)
+	if authToken == "" {
+		return
+	}
 	sessionName := tools.GetSessionName(authToken)
 	var userDataMap = map[string]string{}
 	userDataMap, err = RedisSessClient.HGetAll(sessionName).Result()
@@ -170,6 +174,41 @@ func (rpc *RpcLogic) Logout(ctx context.Context, args *proto.LogoutRequest, repl
 		return err
 	}
 	reply.Code = config.SuccessReplyCode
+	return
+}
+
+//TODO  自己处理消息
+func (rpc *RpcLogic) OnMessage(ctx context.Context, mgRequest *proto.MsgRequest, reply *proto.SuccessReply) (err error) {
+
+	reply.Code = config.FailReplyCode
+	logrus.Infof("logic,OnMessage %d : %s", mgRequest.UserId,string(mgRequest.Msg))
+	var send proto.Send
+
+	err =json.Unmarshal(mgRequest.Msg,&send)
+	if err != nil {
+		logrus.Errorf("logic,OnMessage fail,err:%s", err.Error())
+		return
+	}
+	send.FromUserId = mgRequest.UserId
+
+	u := new(dao.User)
+	userName := u.GetUserNameByUserId(mgRequest.UserId)
+	send.FromUserName = userName
+
+	if send.RoomId !=0 {
+		send.Op = config.OpRoomSend
+	}
+	if send.ToUserId != 0 {
+		send.Op = config.OpSingleSend
+	}
+
+	switch  send.Op {
+	case config.OpSingleSend:
+		err = rpc.Push(ctx,&send,reply)
+		break
+	case config.OpRoomSend:
+		err = rpc.PushRoom(ctx,&send,reply)
+	}
 	return
 }
 
@@ -282,40 +321,32 @@ func (rpc *RpcLogic) GetRoomInfo(ctx context.Context, args *proto.Send, reply *p
 	return
 }
 
+//TODO 业务处理，1.这里无需 处理登录 ，登录不是业务。
+// 2.这里应该查询数据库 用户在哪个房间，与谁是好友。开始监听好友与房间的频道
+// 3 这里是个demo
 func (rpc *RpcLogic) Connect(ctx context.Context, args *proto.ConnectRequest, reply *proto.ConnectReply) (err error) {
 	if args == nil {
 		logrus.Errorf("logic,connect args empty")
 		return
 	}
 	logic := new(Logic)
-	//key := logic.getUserKey(args.AuthToken)
-	logrus.Infof("logic,authToken is:%s", args.AuthToken)
-	key := tools.GetSessionName(args.AuthToken)
-	userInfo, err := RedisClient.HGetAll(key).Result()
-	if err != nil {
-		logrus.Infof("RedisCli HGetAll key :%s , err:%s", key, err.Error())
-		return err
-	}
-	if len(userInfo) == 0 {
-		reply.UserId = 0
-		return
-	}
-	reply.UserId, _ = strconv.Atoi(userInfo["userId"])
+	userId := args.UserId
+	reply.UserId = userId
 	roomUserKey := logic.getRoomUserKey(strconv.Itoa(args.RoomId))
-	if reply.UserId == 0 {
-		reply.UserId = 0
-	} else {
-		userKey := logic.getUserKey(fmt.Sprintf("%d", reply.UserId))
-		logrus.Infof("logic redis set userKey:%s, serverId : %d", userKey, args.ServerId)
-		validTime := config.RedisBaseValidTime * time.Second
-		err = RedisClient.Set(userKey, args.ServerId, validTime).Err()
-		if err != nil {
-			logrus.Warnf("logic set err:%s", err)
-		}
-		RedisClient.HSet(roomUserKey, fmt.Sprintf("%d", reply.UserId), userInfo["userName"])
-		// add room user count ++
-		RedisClient.Incr(logic.getRoomOnlineCountKey(fmt.Sprintf("%d", args.RoomId)))
+
+	userKey := logic.getUserKey(fmt.Sprintf("%d", reply.UserId))
+	logrus.Infof("logic redis set userKey:%s, serverId : %d", userKey, args.ServerId)
+	validTime := config.RedisBaseValidTime * time.Second
+	err = RedisClient.Set(userKey, args.ServerId, validTime).Err()
+	if err != nil {
+		logrus.Warnf("logic set err:%s", err)
 	}
+	u := new(dao.User)
+	userName := u.GetUserNameByUserId(userId)
+	RedisClient.HSet(roomUserKey, fmt.Sprintf("%d", reply.UserId), userName)
+	// add room user count ++
+	RedisClient.Incr(logic.getRoomOnlineCountKey(fmt.Sprintf("%d", args.RoomId)))
+
 	logrus.Infof("logic rpc userId:%d", reply.UserId)
 	return
 }
