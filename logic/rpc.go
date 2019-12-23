@@ -201,12 +201,15 @@ func (rpc *RpcLogic) OnMessage(ctx context.Context, mgRequest *proto.MsgRequest,
 	if send.ToUserId != 0 {
 		send.Op = config.OpSingleSend
 	}
-
+	j,_:=json.Marshal(send)
 	switch  send.Op {
+
 	case config.OpSingleSend:
+
+		logrus.Warn("logic rpc single 209 "+string(j))
 		err = rpc.Push(ctx,&send,reply)
-		break
 	case config.OpRoomSend:
+		logrus.Warn("212logic rpc room  "+string(j))
 		err = rpc.PushRoom(ctx,&send,reply)
 	}
 	return
@@ -226,6 +229,9 @@ func (rpc *RpcLogic) Push(ctx context.Context, args *proto.Send, reply *proto.Su
 	}
 	logic := new(Logic)
 	userSidKey := logic.getUserKey(fmt.Sprintf("%d", sendData.ToUserId))
+	if userSidKey == "" {
+		return
+	}
 	serverId := RedisSessClient.Get(userSidKey).Val()
 	var serverIdInt int
 	serverIdInt, err = strconv.Atoi(serverId)
@@ -233,6 +239,7 @@ func (rpc *RpcLogic) Push(ctx context.Context, args *proto.Send, reply *proto.Su
 		logrus.Errorf("logic,push parse int fail:%s", err.Error())
 		return
 	}
+	logrus.Infof("logic,push ,%d ,%s ", sendData.ToUserId, string(bodyBytes))
 	err = logic.RedisPublishChannel(serverIdInt, sendData.ToUserId, bodyBytes)
 	if err != nil {
 		logrus.Errorf("logic,redis publish err: %s", err.Error())
@@ -272,6 +279,7 @@ func (rpc *RpcLogic) PushRoom(ctx context.Context, args *proto.Send, reply *prot
 		logrus.Errorf("logic,PushRoom Marshal err:%s", err.Error())
 		return
 	}
+	logrus.Warnf("logic,pushRoom ,%d ,%s ", roomId, string(bodyBytes))
 	err = logic.RedisPublishRoomInfo(roomId, len(roomUserInfo), roomUserInfo, bodyBytes)
 	if err != nil {
 		logrus.Errorf("logic,PushRoom err:%s", err.Error())
@@ -356,7 +364,7 @@ func (rpc *RpcLogic) DisConnect(ctx context.Context, args *proto.DisConnectReque
 	roomUserKey := logic.getRoomUserKey(strconv.Itoa(args.RoomId))
 	// room user count --
 	if args.RoomId > 0 {
-		RedisClient.Decr(logic.getRoomOnlineCountKey(fmt.Sprintf("%d", args.RoomId))).Result()
+	     RedisClient.Decr(logic.getRoomOnlineCountKey(fmt.Sprintf("%d", args.RoomId))).Result()
 	}
 	// room login user--
 	if args.UserId != 0 {
@@ -370,7 +378,8 @@ func (rpc *RpcLogic) DisConnect(ctx context.Context, args *proto.DisConnectReque
 	if err != nil {
 		logrus.Warnf("RedisCli HGetAll roomUserInfo key:%s, err: %s", roomUserKey, err)
 	}
-	if err = logic.RedisPublishRoomInfo(args.RoomId, len(roomUserInfo), roomUserInfo, nil); err != nil {
+	logrus.Warnf("logic,rpc redisMsg warn  ")
+	if err = logic.RedisPushRoomInfo(args.RoomId, len(roomUserInfo), roomUserInfo); err != nil {
 		logrus.Warnf("publish RedisPublishRoomCount err: %s", err.Error())
 		return
 	}

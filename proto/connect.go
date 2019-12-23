@@ -5,6 +5,9 @@
  */
 package proto
 
+/**
+与前端的接口
+ */
 type Msg struct {
 	Ver       int    `json:"ver"`  // protocol version
 	Operation int    `json:"op"`   // operation for request
@@ -12,6 +15,9 @@ type Msg struct {
 	Body      []byte `json:"body"` // binary body bytes
 }
 
+/**
+与逻辑层的
+ */
 type PushMsgRequest struct {
 	UserId int
 	Msg    Msg

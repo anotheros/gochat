@@ -51,7 +51,7 @@ func (rpc *RpcConnect) Connect(connReq *proto.ConnectRequest) (uid int, err erro
 	reply := &proto.ConnectReply{}
 	err = logicRpcClient.Call(context.Background(), "Connect", connReq, reply)
 	if err != nil {
-		logrus.Fatalf("failed to call: %v", err)
+		logrus.Errorf("failed to call: %v", err)
 	}
 	uid = reply.UserId
 	logrus.Infof("connect logic userId :%d", reply.UserId)
@@ -61,7 +61,7 @@ func (rpc *RpcConnect) Connect(connReq *proto.ConnectRequest) (uid int, err erro
 func (rpc *RpcConnect) DisConnect(disConnReq *proto.DisConnectRequest) (err error) {
 	reply := &proto.DisConnectReply{}
 	if err = logicRpcClient.Call(context.Background(), "DisConnect", disConnReq, reply); err != nil {
-		logrus.Fatalf("failed to call: %v", err)
+		logrus.Errorf("failed to call: %v", err)
 	}
 	return
 }
@@ -70,7 +70,7 @@ func (rpc *RpcConnect) CheckAuth(checkAuthReq *proto.CheckAuthRequest) ( *proto.
 	reply := &proto.CheckAuthResponse{}
 	err := logicRpcClient.Call(context.Background(), "CheckAuth", checkAuthReq, reply)
 	if err != nil {
-		logrus.Fatalf("failed to call CheckAuth: %v", err)
+		logrus.Errorf("failed to call CheckAuth: %v", err)
 	}
 	return reply,err
 }
@@ -79,7 +79,7 @@ func (rpc *RpcConnect) OnMessage(mgRequest *proto.MsgRequest) (reply *proto.Succ
 
 	err = logicRpcClient.Call(context.Background(), "OnMessage", mgRequest, &reply)
 	if err != nil {
-		logrus.Fatalf("failed to call OnMessage: %v", err)
+		logrus.Errorf("failed to call OnMessage: %v", err)
 	}
 	return
 }

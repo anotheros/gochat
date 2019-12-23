@@ -30,9 +30,10 @@ $(document).ready(function () {
      websocket = new WebSocket(socketUrl + "?auth=" + auth);
     let data = {"authToken": getLocalStorage("authToken"), "roomId": 1};
     let data2 ={op: 3, msg: "大家好", roomId: 1}
+    let data3 ={ msg: "你好好", toUserId: 6}
     //websocket onopen
     websocket.onopen = function (evt) {
-        websocket.send(JSON.stringify(data2));
+        websocket.send(JSON.stringify(data3));
         //getRoomInfo();
     };
 
@@ -60,6 +61,7 @@ $(document).ready(function () {
                 innerInfoArr.push(item)
             }
             $('#member_info').html(innerInfoArr.join(""));
+            $("#roomOnlineMemberNum").text(data.count);
         }
     };
 });

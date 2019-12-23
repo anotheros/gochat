@@ -153,7 +153,7 @@ func (s *Server) readPump(ch *Channel) {
 	})
 
 	for {
-		_, message, err := ch.conn.ReadMessage()
+		messageType, message, err := ch.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				logrus.Errorf("readPump ReadMessage err:%s", err.Error())
@@ -163,7 +163,12 @@ func (s *Server) readPump(ch *Channel) {
 		if message == nil {
 			return
 		}
+		logrus.Info(messageType)
 
+
+		//msg := &proto.Msg{}
+
+		//msgString:=msg.Body
 		// TODO 消息发给 逻辑层
 		msgRequest := &proto.MsgRequest{Msg: message, UserId: ch.userId}
 		reply, err := rpcConnectObj.OnMessage(msgRequest)

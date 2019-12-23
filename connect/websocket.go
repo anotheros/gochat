@@ -43,8 +43,8 @@ func (c *Connect) serveWs(server *Server, w http.ResponseWriter, r *http.Request
 	ch.conn = conn
 	err = server.onConnect(auth,ch)
 	if err != nil {
-		//w.WriteHeader(http.StatusUnauthorized)
-		//w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(err.Error()))
 		ch.conn.Close()
 		logrus.Warnf("serverWs Warnf:%s", err.Error())
 		return
