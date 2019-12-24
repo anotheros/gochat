@@ -13,5 +13,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/smallnest/rpcx v0.0.0-20191101045608-2a801682117a
 	github.com/spf13/viper v1.4.0
+	go.uber.org/zap v1.12.0
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )

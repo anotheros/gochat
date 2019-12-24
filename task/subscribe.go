@@ -7,8 +7,8 @@ package task
 
 import (
 	"github.com/go-redis/redis"
-	"github.com/sirupsen/logrus"
 	"gochat/config"
+	"gochat/log"
 	"gochat/tools"
 )
 
@@ -22,7 +22,7 @@ func (task *Task) InitSubscribeRedisClient() (err error) {
 	}
 	RedisClient = tools.GetRedisInstance(redisOpt)
 	if pong, err := RedisClient.Ping().Result(); err != nil {
-		logrus.Infof("RedisClient Ping Result pong: %s,  err: %s", pong, err)
+		log.Log.Infof("RedisClient Ping Result pong: %s,  err: %s", pong, err)
 	}
 
 	go func() {
@@ -31,7 +31,7 @@ func (task *Task) InitSubscribeRedisClient() (err error) {
 		for {
 			msg, ok := <-ch
 			if !ok {
-				logrus.Debugf("redisSub Channel !ok: %v", ok)
+				log.Log.Debugf("redisSub Channel !ok: %v", ok)
 				break
 			}
 			task.Push(msg.Payload)

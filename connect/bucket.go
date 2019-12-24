@@ -50,7 +50,7 @@ func (b *Bucket) PushRoom(ch chan *proto.PushRoomMsgRequest) {
 		)
 		arg = <-ch
 		if room = b.Room(arg.RoomId); room != nil {
-			room.Push(&arg.Msg)
+			room.Push(arg.Msg)
 		}
 	}
 }

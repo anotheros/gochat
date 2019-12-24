@@ -6,12 +6,13 @@
 package connect
 
 import (
-	"github.com/sirupsen/logrus"
+	jsoniter "github.com/json-iterator/go"
 	"gochat/config"
+	"gochat/log"
 	"runtime"
 	"time"
 )
-
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 var DefaultServer *Server
 
 type Connect struct {
@@ -30,7 +31,7 @@ func (c *Connect) Run() {
 
 	//init logic layer rpc client, call logic layer rpc server
 	if err := c.InitLogicRpcClient(); err != nil {
-		logrus.Panicf("InitLogicRpcClient err:%s", err.Error())
+		log.Log.Panicf("InitLogicRpcClient err:%s", err.Error())
 	}
 	//init Connect layer rpc server, logic client will call this
 	Buckets := make([]*Bucket, connectConfig.ConnectBucket.CpuNum)
@@ -56,11 +57,11 @@ func (c *Connect) Run() {
 
 	//init Connect layer rpc server ,task layer will call this
 	if err := c.InitConnectRpcServer(); err != nil {
-		logrus.Panicf("InitConnectRpcServer Fatal error: %s \n", err)
+		log.Log.Panicf("InitConnectRpcServer Fatal error: %s \n", err)
 	}
 
 	//start Connect layer server handler persistent connection
 	if err := c.InitWebsocket(); err != nil {
-		logrus.Panicf("Connect layer InitWebsocket() error:  %s \n", err.Error())
+		log.Log.Panicf("Connect layer InitWebsocket() error:  %s \n", err.Error())
 	}
 }

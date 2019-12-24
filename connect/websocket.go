@@ -7,8 +7,8 @@ package connect
 
 import (
 	"github.com/gorilla/websocket"
-	"github.com/sirupsen/logrus"
 	"gochat/config"
+	"gochat/log"
 	"net/http"
 )
 
@@ -34,7 +34,7 @@ func (c *Connect) serveWs(server *Server, w http.ResponseWriter, r *http.Request
 	conn, err := upGrader.Upgrade(w, r, nil)
 
 	if err != nil {
-		logrus.Errorf("serverWs err:%s", err.Error())
+		log.Log.Errorf("serverWs err:%s", err.Error())
 		return
 	}
 	var ch *Channel
@@ -46,7 +46,7 @@ func (c *Connect) serveWs(server *Server, w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte(err.Error()))
 		ch.conn.Close()
-		logrus.Warnf("serverWs Warnf:%s", err.Error())
+		log.Log.Warnf("serverWs Warnf:%s", err.Error())
 		return
 	}
 	//send data to websocket conn

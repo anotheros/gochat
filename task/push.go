@@ -6,9 +6,8 @@
 package task
 
 import (
-	"encoding/json"
-	"github.com/sirupsen/logrus"
 	"gochat/config"
+	"gochat/log"
 	"gochat/proto"
 	"math/rand"
 )
@@ -17,7 +16,6 @@ type PushParams struct {
 	ServerId int
 	UserId   int
 	Msg      *proto.UserMsg
-	RoomId   int
 	SeqId    string
 }
 
@@ -38,21 +36,21 @@ func (task *Task) processSinglePush(ch chan *PushParams) {
 	var arg *PushParams
 	for {
 		arg = <-ch
-		task.pushSingleToConnect(arg.ServerId, arg.UserId, arg.Msg)
+		task.pushSingleToConnect(arg.ServerId, arg.SeqId, arg.UserId, arg.Msg)
 	}
 }
 
 func (task *Task) Push(msg string) {
 	m := &proto.RedisMsg{}
 	if err := json.Unmarshal([]byte(msg), m); err != nil {
-		logrus.Infof(" json.Unmarshal err:%v ", err)
+		log.Log.Infof(" json.Unmarshal err:%v ", err)
 	}
-	logrus.Infof("push msg info %s", m)
+	log.Log.Infof("push msg info %s", m)
 	switch m.Op {
 	case config.OpSingleSend:
 		pushChannel[rand.Int()%config.Conf.Task.TaskBase.PushChan] <- &PushParams{
 			ServerId: m.ServerId,
-			UserId:   m.UserId,
+			UserId:   m.ToUserId,
 			Msg:      redisMsg2UserMsg(m),
 		}
 	case config.OpRoomSend:
@@ -64,12 +62,26 @@ func (task *Task) Push(msg string) {
 	}
 }
 
-func redisMsg2RoomMsg(*proto.RedisMsg) *proto.RoomMsg {
+//TODO
+func redisMsg2RoomMsg(redisMsg *proto.RedisMsg) *proto.RoomMsg {
 
-	return nil
+	roomMsg := &proto.RoomMsg{}
+	roomMsg.Msg = redisMsg.Msg
+	roomMsg.CreateTime = redisMsg.CreateTime
+	roomMsg.RoomId = redisMsg.RoomId
+	roomMsg.FromUserId = redisMsg.FromUserId
+	roomMsg.FromUserName = redisMsg.FromUserName
+
+	return roomMsg
 }
 
-func redisMsg2UserMsg(*proto.RedisMsg) *proto.UserMsg {
-
+func redisMsg2UserMsg(redisMsg *proto.RedisMsg) *proto.UserMsg {
+	userMsg := &proto.UserMsg{}
+	userMsg.Msg = redisMsg.Msg
+	userMsg.CreateTime = redisMsg.CreateTime
+	userMsg.ToUserId = redisMsg.ToUserId
+	userMsg.ToUserName = redisMsg.ToUserName
+	userMsg.FromUserId = redisMsg.FromUserId
+	userMsg.FromUserName = redisMsg.FromUserName
 	return nil
 }

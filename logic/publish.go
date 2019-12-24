@@ -7,14 +7,13 @@ package logic
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/rcrowley/go-metrics"
-	"github.com/sirupsen/logrus"
 	"github.com/smallnest/rpcx/server"
 	"github.com/smallnest/rpcx/serverplugin"
 	"gochat/config"
+	"gochat/log"
 	"gochat/proto"
 	"gochat/tools"
 	"strings"
@@ -32,7 +31,7 @@ func (logic *Logic) InitPublishRedisClient() (err error) {
 	}
 	RedisClient = tools.GetRedisInstance(redisOpt)
 	if pong, err := RedisClient.Ping().Result(); err != nil {
-		logrus.Infof("RedisCli Ping Result pong: %s,  err: %s", pong, err)
+		log.Log.Infof("RedisCli Ping Result pong: %s,  err: %s", pong, err)
 	}
 	//this can change use another redis save session data
 	RedisSessClient = RedisClient
@@ -45,9 +44,9 @@ func (logic *Logic) InitRpcServer() (err error) {
 	rpcAddressList := strings.Split(config.Conf.Logic.LogicBase.RpcAddress, ",")
 	for _, bind := range rpcAddressList {
 		if network, addr, err = tools.ParseNetwork(bind); err != nil {
-			logrus.Panicf("InitLogicRpc ParseNetwork error : %s", err.Error())
+			log.Log.Panicf("InitLogicRpc ParseNetwork error : %s", err.Error())
 		}
-		logrus.Infof("logic start run at-->%s:%s", network, addr)
+		log.Log.Infof("logic start run at-->%s:%s", network, addr)
 		go logic.createRpcServer(network, addr)
 	}
 	return
@@ -59,7 +58,7 @@ func (logic *Logic) createRpcServer(network string, addr string) {
 	// serverId must be unique
 	err := s.RegisterName(config.Conf.Common.CommonEtcd.ServerPathLogic, new(RpcLogic), fmt.Sprintf("%d", config.Conf.Common.CommonEtcd.ServerId))
 	if err != nil {
-		logrus.Errorf("register error:%s", err.Error())
+		log.Log.Errorf("register error:%s", err.Error())
 	}
 	s.RegisterOnShutdown(func(s *server.Server) {
 		s.UnregisterAll()
@@ -77,7 +76,7 @@ func (logic *Logic) addRegistryPlugin(s *server.Server, network string, addr str
 	}
 	err := r.Start()
 	if err != nil {
-		logrus.Fatal(err)
+		log.Log.Fatal(err)
 	}
 	s.Plugins.Add(r)
 }
@@ -85,12 +84,12 @@ func (logic *Logic) addRegistryPlugin(s *server.Server, network string, addr str
 func (logic *Logic) RedisPublishChannel(redisMsg *proto.RedisMsg) (err error) {
 	redisMsgStr, err := json.Marshal(redisMsg)
 	if err != nil {
-		logrus.Errorf("logic,RedisPublishChannel Marshal err:%s", err.Error())
+		log.Log.Errorf("logic,RedisPublishChannel Marshal err:%s", err.Error())
 		return err
 	}
 	redisChannel := config.QueueName
 	if err := RedisClient.Publish(redisChannel, redisMsgStr).Err(); err != nil {
-		logrus.Errorf("logic,RedisPublishChannel err:%s", err.Error())
+		log.Log.Errorf("logic,RedisPublishChannel err:%s", err.Error())
 		return err
 	}
 	return
@@ -100,12 +99,12 @@ func (logic *Logic) RedisPublishRoomInfo(redisMsg *proto.RedisMsg) (err error) {
 
 	redisMsgByte, err := json.Marshal(redisMsg)
 	if err != nil {
-		logrus.Errorf("logic,RedisPublishRoomInfo redisMsg error : %s", err.Error())
+		log.Log.Errorf("logic,RedisPublishRoomInfo redisMsg error : %s", err.Error())
 		return
 	}
 	err = RedisClient.Publish(config.QueueName, redisMsgByte).Err()
 	if err != nil {
-		logrus.Errorf("logic,RedisPublishRoomInfo redisMsg error : %s", err.Error())
+		log.Log.Errorf("logic,RedisPublishRoomInfo redisMsg error : %s", err.Error())
 		return
 	}
 	return
@@ -119,12 +118,12 @@ func (logic *Logic) RedisPushRoomCount(roomId int, count int) (err error) {
 	}
 	redisMsgByte, err := json.Marshal(redisMsg)
 	if err != nil {
-		logrus.Errorf("logic,RedisPushRoomCount redisMsg error : %s", err.Error())
+		log.Log.Errorf("logic,RedisPushRoomCount redisMsg error : %s", err.Error())
 		return
 	}
 	err = RedisClient.Publish(config.QueueName, redisMsgByte).Err()
 	if err != nil {
-		logrus.Errorf("logic,RedisPushRoomCount redisMsg error : %s", err.Error())
+		log.Log.Errorf("logic,RedisPushRoomCount redisMsg error : %s", err.Error())
 		return
 	}
 	return
@@ -133,12 +132,12 @@ func (logic *Logic) RedisPushRoomCount(roomId int, count int) (err error) {
 func (logic *Logic) RedisPushRoomInfo(redisMsg *proto.RedisMsg) (err error) {
 	redisMsgByte, err := json.Marshal(redisMsg)
 	if err != nil {
-		logrus.Errorf("logic,RedisPushRoomInfo redisMsg error : %s", err.Error())
+		log.Log.Errorf("logic,RedisPushRoomInfo redisMsg error : %s", err.Error())
 		return
 	}
 	err = RedisClient.Publish(config.QueueName, redisMsgByte).Err()
 	if err != nil {
-		logrus.Errorf("logic,RedisPushRoomInfo redisMsg error : %s", err.Error())
+		log.Log.Errorf("logic,RedisPushRoomInfo redisMsg error : %s", err.Error())
 		return
 	}
 	return

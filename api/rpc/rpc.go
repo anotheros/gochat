@@ -7,9 +7,9 @@ package rpc
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
 	"github.com/smallnest/rpcx/client"
 	"gochat/config"
+	"gochat/log"
 	"gochat/proto"
 	"sync"
 )
@@ -34,7 +34,7 @@ func InitLogicRpcClient() {
 		RpcLogicObj = new(RpcLogic)
 	})
 	if LogicRpcClient == nil {
-		logrus.Errorf("get logic rpc client nil")
+		log.Log.Errorf("get logic rpc client nil")
 	}
 }
 

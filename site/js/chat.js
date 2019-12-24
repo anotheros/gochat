@@ -29,8 +29,8 @@ $(document).ready(function () {
     });
      websocket = new WebSocket(socketUrl + "?auth=" + auth);
     let data = {"authToken": getLocalStorage("authToken"), "roomId": 1};
-    let data2 ={op: 3, msg: "大家好", roomId: 1}
-    let data3 ={ msg: "你好好", toUserId: 6}
+    let data2 ={ver:1,op:3,seq:"123",body:{msg: "大家好", roomId: 1}}
+    let data3 ={ver:1,op:2,seq:"123",body:{msg: "你好好", toUserId: 6}}
     //websocket onopen
     websocket.onopen = function (evt) {
         websocket.send(JSON.stringify(data3));
@@ -40,28 +40,28 @@ $(document).ready(function () {
     websocket.onmessage = function (evt) {
         let data = JSON.parse(evt.data);
         if (data.op == 3) {
-            let userNameAndMsg = data.fromUserName + '(' + data.createTime + ')';
+            let userNameAndMsg = data.body.fromUserName + '(' + data.body.createTime + ')';
             let innerInfo = '<div class="item" >' +
                 '<p class="nick guest j-nick " data-role="guest"></p>' +
                 '<p class="text"></p>' +
                 '</div>';
             $("#msg").append(innerInfo);
             $("#msg > div[class='item']:last > p[class='nick guest j-nick ']").text(userNameAndMsg);
-            $("#msg > div[class='item']:last > p[class='text']:last").text(data.msg);
+            $("#msg > div[class='item']:last > p[class='text']:last").text(data.body.msg);
             $("#msg").animate({scrollTop: $("#msg").offset().top + 100000}, 1000);
         } else if (data.op == 4) {
             // get room user count
-            $("#roomOnlineMemberNum").text(data.count);
+            $("#roomOnlineMemberNum").text(data.body.count);
         } else if (data.op == 5) {
             // get room user list
             $('#member_info').html("");
             let innerInfoArr = [];
-            for (let k in data.roomUserInfo) {
-                let item = '<div class="item" data-id="' + k + '"><div class="avatar"><img src="/static/chat_head.jpg"> </div> <div class="nick">' + data.roomUserInfo[k] + '</div> </div>';
+            for (let k in data.body.roomUserInfo) {
+                let item = '<div class="item" data-id="' + k + '"><div class="avatar"><img src="/static/chat_head.jpg"> </div> <div class="nick">' + data.body.roomUserInfo[k] + '</div> </div>';
                 innerInfoArr.push(item)
             }
             $('#member_info').html(innerInfoArr.join(""));
-            $("#roomOnlineMemberNum").text(data.count);
+            $("#roomOnlineMemberNum").text(data.body.count);
         }
     };
 });
@@ -118,7 +118,7 @@ function send() {
         return
     }
     document.getElementById('editText').value = '';
-    let jsonData = {op: 3, msg: msg, roomId: 1};
+    let jsonData = {ver:1,op:3,seq:"123",body:{msg: msg, roomId: 1}}
     /**$.ajax({
         type: "POST",
         dataType: "json",

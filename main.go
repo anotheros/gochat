@@ -6,16 +6,16 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
+	"github.com/json-iterator/go"
 	"gochat/api"
 	"gochat/connect"
+	"gochat/log"
 	"gochat/site"
 	"gochat/task"
 
 	//"flag"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	//"gochat/api"
 	//"gochat/connect"
 	"gochat/logic"
@@ -26,30 +26,39 @@ import (
 	"os/signal"
 	"syscall"
 )
-
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 func main2() {
-	var send proto.Send
-	a := `{"op":3,"msg":"123","roomId":1}`
-	err := json.Unmarshal([]byte(a), &send)
+	 msg := proto.Msg{}
+	//a := `{"ver":1,"op":3,"seq":"123","body":{"msg": "大家好", "roomId": 1}}`
+	msg.Body = proto.RoomMsg{Msg:"大家好",RoomId:1}
+	msg.Ver =1
+	msg.Operation =3
+	msg.SeqId = "123"
+	msgbyte ,_:= json.Marshal(msg)
+	fmt.Println(msg)
+	fmt.Println(string(msgbyte))
+
+	msg2 := proto.Msg{}
+	body := &proto.RoomMsg{}
+	msg2.Body = body
+	err := json.Unmarshal(msgbyte, &msg2)
 	if err != nil {
-		logrus.Errorf("logic,OnMessage fail,err:%s", err.Error())
+		log.Log.Errorf("logic,OnMessage fail,err:%s", err.Error())
 		return
 	}
-	fmt.Print(send)
+	room,_:= msg2.Body.(*proto.RoomMsg)
+	//bodyJ ,_:=json.Marshal(msg2.Body)
+	//json.Unmarshal(bodyJ, &body)
+	//msg2.Body = body
+	fmt.Println(msg2)
+	fmt.Println(111)
+	fmt.Println(*room)
 
-	push(&send)
+
+
 }
 
-func push(send *proto.Send) {
-	sendData := send
-	var bodyBytes2 []byte
-	bodyBytes2, err := json.Marshal(sendData)
-	if err != nil {
-		logrus.Errorf("logic,push msg fail,err:%s", err.Error())
-		return
-	}
-	logrus.Info(string(bodyBytes2))
-}
+
 
 func main() {
 	var module string

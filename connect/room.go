@@ -7,7 +7,6 @@ package connect
 
 import (
 	"github.com/pkg/errors"
-	"gochat/proto"
 	"sync"
 )
 
@@ -48,7 +47,7 @@ func (r *Room) Put(ch *Channel) (err error) {
 	return
 }
 
-func (r *Room) Push(msg *proto.Msg) {
+func (r *Room) Push(msg []byte) {
 	r.rLock.RLock()
 	for ch := r.next; ch != nil; ch = ch.Next {
 		ch.Push(msg)

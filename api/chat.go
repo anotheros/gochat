@@ -10,10 +10,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"gochat/api/router"
 	"gochat/api/rpc"
 	"gochat/config"
+	"gochat/log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -35,7 +35,7 @@ func (c *Chat) Run() {
 
 	r := router.Register()
 	runMode := config.GetGinRunMode()
-	logrus.Info("server start , now run mode is ", runMode)
+	log.Log.Info("server start , now run mode is ", runMode)
 	gin.SetMode(runMode)
 	apiConfig := config.Conf.Api
 	port := apiConfig.ApiBase.ListenPort
@@ -48,20 +48,20 @@ func (c *Chat) Run() {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logrus.Errorf("start listen : %s\n", err)
+			log.Log.Errorf("start listen : %s\n", err)
 		}
 	}()
 	// if have two quit signal , this signal will priority capture ,also can graceful shutdown
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGTSTP)
 	<-quit
-	logrus.Infof("Shutdown Server ...")
+	log.Log.Infof("Shutdown Server ...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		logrus.Errorf("Server Shutdown:", err)
+		log.Log.Errorf("Server Shutdown:", err)
 	}
-	logrus.Infof("Server exiting")
+	log.Log.Infof("Server exiting")
 	os.Exit(0)
 }

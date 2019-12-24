@@ -6,11 +6,12 @@
 package logic
 
 import (
-	"github.com/sirupsen/logrus"
+	jsoniter "github.com/json-iterator/go"
 	"gochat/config"
+	"gochat/log"
 	"runtime"
 )
-
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 type Logic struct {
 }
 
@@ -26,11 +27,11 @@ func (logic *Logic) Run() {
 
 	//init publish redis
 	if err := logic.InitPublishRedisClient(); err != nil {
-		logrus.Panicf("logic init publishRedisClient fail,err:%s", err.Error())
+		log.Log.Panicf("logic init publishRedisClient fail,err:%s", err.Error())
 	}
 
 	//init rpc server
 	if err := logic.InitRpcServer(); err != nil {
-		logrus.Panicf("logic init rpc server fail")
+		log.Log.Panicf("logic init rpc server fail")
 	}
 }

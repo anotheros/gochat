@@ -7,8 +7,8 @@ package site
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"gochat/config"
+	"gochat/log"
 	"net/http"
 )
 
@@ -23,5 +23,5 @@ func (s *Site) Run() {
 	siteConfig := config.Conf.Site
 	port := siteConfig.SiteBase.ListenPort
 	addr := fmt.Sprintf(":%d", port)
-	logrus.Fatal(http.ListenAndServe(addr, http.FileServer(http.Dir("./site/"))))
+	log.Log.Fatal(http.ListenAndServe(addr, http.FileServer(http.Dir("./site/"))))
 }

@@ -8,8 +8,8 @@ package db
 import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	"github.com/sirupsen/logrus"
 	"gochat/config"
+	"gochat/log"
 	"path/filepath"
 	"sync"
 	"time"
@@ -37,7 +37,7 @@ func initDB(dbName string) {
 	}
 	syncLock.Unlock()
 	if e != nil {
-		logrus.Error("connect db fail:%s", e.Error())
+		log.Log.Error("connect db fail:%s", e.Error())
 	}
 }
 

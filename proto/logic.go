@@ -73,6 +73,13 @@ type DisConnectReply struct {
 }
 
 // 以下 返回给前端的格式，与接收前端的格式。是 Msg 的body
+
+type Msg struct {
+	Ver       int         `json:"ver"`  // protocol version
+	Operation int         `json:"op"`   // operation for request
+	SeqId     string      `json:"seq"`  // sequence number chosen by client
+	Body      interface{} `json:"body"` // binary body bytes
+}
 type UserMsg struct {
 	FromUserId   int    `json:"fromUserId"`
 	FromUserName string `json:"fromUserName"`
@@ -81,6 +88,7 @@ type UserMsg struct {
 	CreateTime   string `json:"createTime"`
 	Msg          string `json:"msg"`
 }
+
 type RoomMsg struct {
 	FromUserId   int    `json:"fromUserId"`
 	FromUserName string `json:"fromUserName"`
@@ -94,16 +102,16 @@ type RoomInfoMsg struct {
 	Count        int               `json:"count,omitempty"`
 	RoomUserInfo map[string]string `json:"roomUserInfo"`
 }
-
+//----end----
+// 内部传参
 type Send struct {
-	SeqId        string `json:"seq"`
-	Code         int    `json:"code"`
-	Msg          string `json:"msg"`
-	FromUserId   int    `json:"fromUserId"`
-	FromUserName string `json:"fromUserName"`
-	ToUserId     int    `json:"toUserId"`
-	ToUserName   string `json:"toUserName"`
-	RoomId       int    `json:"roomId"`
-	Op           int    `json:"op"`
-	CreateTime   string `json:"createTime"`
+	SeqId        string
+	Msg          string
+	FromUserId   int
+	FromUserName string
+	ToUserId     int
+	ToUserName   string
+	RoomId       int
+	Op           int
+	CreateTime   string
 }

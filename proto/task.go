@@ -10,10 +10,14 @@ type RedisMsg struct {
 	Op           int               `json:"op"`
 	ServerId     int               `json:"serverId,omitempty"`
 	RoomId       int               `json:"roomId,omitempty"`
-	UserId       int               `json:"userId,omitempty"`
+	FromUserId   int               `json:"fromUserId"`
+	FromUserName string            `json:"fromUserName"`
+	ToUserId     int               `json:"toUserId"`
+	ToUserName   string            `json:"toUserName"`
 	Msg          string            `json:"msg"`
 	Count        int               `json:"count"`
 	RoomUserInfo map[string]string `json:"roomUserInfo"`
+	CreateTime   string            `json:"createTime"`
 }
 
 type RedisRoomInfo struct {
