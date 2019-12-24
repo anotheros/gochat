@@ -271,6 +271,8 @@ func (rpc *RpcLogic) Push(ctx context.Context, args *proto.Send, reply *proto.Su
 		ServerId:   serverIdInt,
 		ToUserId:   sendData.ToUserId,
 		ToUserName: sendData.ToUserName,
+		FromUserId:sendData.FromUserId,
+		FromUserName:sendData.FromUserName,
 		Msg:        sendData.Msg,
 		SeqId:      sendData.SeqId,
 		CreateTime: sendData.CreateTime,

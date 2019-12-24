@@ -45,7 +45,7 @@ func (task *Task) Push(msg string) {
 	if err := json.Unmarshal([]byte(msg), m); err != nil {
 		log.Log.Infof(" json.Unmarshal err:%v ", err)
 	}
-	log.Log.Infof("push msg info %s", m)
+	log.Log.Infof("push msg info %s", msg)
 	switch m.Op {
 	case config.OpSingleSend:
 		pushChannel[rand.Int()%config.Conf.Task.TaskBase.PushChan] <- &PushParams{
@@ -83,5 +83,5 @@ func redisMsg2UserMsg(redisMsg *proto.RedisMsg) *proto.UserMsg {
 	userMsg.ToUserName = redisMsg.ToUserName
 	userMsg.FromUserId = redisMsg.FromUserId
 	userMsg.FromUserName = redisMsg.FromUserName
-	return nil
+	return userMsg
 }

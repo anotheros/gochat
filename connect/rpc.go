@@ -61,7 +61,7 @@ func (rpc *RpcConnect) Connect(connReq *proto.ConnectRequest) (uid int, err erro
 func (rpc *RpcConnect) DisConnect(disConnReq *proto.DisConnectRequest) (err error) {
 	reply := &proto.DisConnectReply{}
 	if err = logicRpcClient.Call(context.Background(), "DisConnect", disConnReq, reply); err != nil {
-		log.Log.Fatalf("failed to call: %v", err)
+		log.Log.Errorf("failed to call: %v", err)
 	}
 	return
 }
@@ -135,7 +135,8 @@ func (rpc *RpcConnectPush) PushRoomMsg(ctx context.Context, pushRoomMsgReq *prot
 func (rpc *RpcConnectPush) PushRoomCount(ctx context.Context, pushRoomMsgReq *proto.PushRoomMsgRequest, successReply *proto.SuccessReply) (err error) {
 	successReply.Code = config.SuccessReplyCode
 	successReply.Msg = config.SuccessReplyMsg
-	log.Log.Infof("PushRoomCount msg %v", pushRoomMsgReq)
+	msg,_:=json.Marshal(pushRoomMsgReq)
+	log.Log.Infof("connect,PushRoomInfo msg %s", msg)
 	for _, bucket := range DefaultServer.Buckets {
 		bucket.BroadcastRoom(pushRoomMsgReq)
 	}
@@ -145,7 +146,8 @@ func (rpc *RpcConnectPush) PushRoomCount(ctx context.Context, pushRoomMsgReq *pr
 func (rpc *RpcConnectPush) PushRoomInfo(ctx context.Context, pushRoomMsgReq *proto.PushRoomMsgRequest, successReply *proto.SuccessReply) (err error) {
 	successReply.Code = config.SuccessReplyCode
 	successReply.Msg = config.SuccessReplyMsg
-	log.Log.Infof("connect,PushRoomInfo msg %+v", pushRoomMsgReq)
+	msg,_:=json.Marshal(pushRoomMsgReq)
+	log.Log.Infof("connect,PushRoomInfo msg %s", msg)
 	for _, bucket := range DefaultServer.Buckets {
 		bucket.BroadcastRoom(pushRoomMsgReq)
 	}
