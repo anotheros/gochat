@@ -66,16 +66,16 @@ func (rpc *RpcConnect) DisConnect(disConnReq *proto.DisConnectRequest) (err erro
 	return
 }
 
-func (rpc *RpcConnect) CheckAuth(checkAuthReq *proto.CheckAuthRequest) ( *proto.CheckAuthResponse, error) {
+func (rpc *RpcConnect) CheckAuth(checkAuthReq *proto.CheckAuthRequest) (*proto.CheckAuthResponse, error) {
 	reply := &proto.CheckAuthResponse{}
 	err := logicRpcClient.Call(context.Background(), "CheckAuth", checkAuthReq, reply)
 	if err != nil {
 		logrus.Errorf("failed to call CheckAuth: %v", err)
 	}
-	return reply,err
+	return reply, err
 }
 
-func (rpc *RpcConnect) OnMessage(mgRequest *proto.MsgRequest) (reply *proto.SuccessReply,err error) {
+func (rpc *RpcConnect) OnMessage(mgRequest *proto.Msg) (reply *proto.SuccessReply, err error) {
 
 	err = logicRpcClient.Call(context.Background(), "OnMessage", mgRequest, &reply)
 	if err != nil {
@@ -83,7 +83,6 @@ func (rpc *RpcConnect) OnMessage(mgRequest *proto.MsgRequest) (reply *proto.Succ
 	}
 	return
 }
-
 
 func (c *Connect) InitConnectRpcServer() (err error) {
 	var network, addr string

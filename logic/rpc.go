@@ -178,39 +178,53 @@ func (rpc *RpcLogic) Logout(ctx context.Context, args *proto.LogoutRequest, repl
 }
 
 //TODO  自己处理消息
-func (rpc *RpcLogic) OnMessage(ctx context.Context, mgRequest *proto.MsgRequest, reply *proto.SuccessReply) (err error) {
+func (rpc *RpcLogic) OnMessage(ctx context.Context, msg *proto.Msg, reply *proto.SuccessReply) (err error) {
 
-	reply.Code = config.FailReplyCode
-	logrus.Infof("logic,OnMessage %d : %s", mgRequest.UserId,string(mgRequest.Msg))
-	var send proto.Send
-
-	err =json.Unmarshal(mgRequest.Msg,&send)
+	msgString, err := json.Marshal(msg)
 	if err != nil {
 		logrus.Errorf("logic,OnMessage fail,err:%s", err.Error())
 		return
 	}
-	send.FromUserId = mgRequest.UserId
+	logrus.Infof("logic,OnMessage :%s", msgString)
+
+	reply.Code = config.FailReplyCode
+	send := &proto.Send{}
+	send.SeqId = msg.SeqId
+	send.Op = msg.Operation
+
+	switch msg.Operation {
+
+	case config.OpRoomSend:
+		if roomMsg, ok := msg.Body.(proto.RoomMsg); ok {
+			send.FromUserId = roomMsg.FromUserId
+			send.Msg = roomMsg.Msg
+			send.RoomId = roomMsg.RoomId
+			send.CreateTime = roomMsg.CreateTime
+		}
+	case config.OpSingleSend:
+		if userMsg, ok := msg.Body.(proto.UserMsg); ok {
+			send.FromUserId = userMsg.FromUserId
+			send.Msg = userMsg.Msg
+			send.ToUserId = userMsg.ToUserId
+			send.CreateTime = userMsg.CreateTime
+		}
+	default:
+		return
+
+	}
 
 	u := new(dao.User)
-	userName := u.GetUserNameByUserId(mgRequest.UserId)
+	userName := u.GetUserNameByUserId(send.FromUserId)
 	send.FromUserName = userName
 
-	if send.RoomId !=0 {
-		send.Op = config.OpRoomSend
-	}
-	if send.ToUserId != 0 {
-		send.Op = config.OpSingleSend
-	}
-	j,_:=json.Marshal(send)
-	switch  send.Op {
+	switch send.Op {
 
 	case config.OpSingleSend:
 
-		logrus.Warn("logic rpc single 209 "+string(j))
-		err = rpc.Push(ctx,&send,reply)
+		err = rpc.Push(ctx, send, reply)
 	case config.OpRoomSend:
-		logrus.Warn("212logic rpc room  "+string(j))
-		err = rpc.PushRoom(ctx,&send,reply)
+
+		err = rpc.PushRoom(ctx, send, reply)
 	}
 	return
 }
@@ -240,7 +254,16 @@ func (rpc *RpcLogic) Push(ctx context.Context, args *proto.Send, reply *proto.Su
 		return
 	}
 	logrus.Infof("logic,push ,%d ,%s ", sendData.ToUserId, string(bodyBytes))
-	err = logic.RedisPublishChannel(serverIdInt, sendData.ToUserId, bodyBytes)
+
+	redisMsg := &proto.RedisMsg{
+		Op:       config.OpSingleSend,
+		ServerId: serverIdInt,
+		UserId:   sendData.ToUserId,
+		Msg:      sendData.Msg,
+		SeqId:    sendData.SeqId,
+	}
+
+	err = logic.RedisPublishChannel(redisMsg)
 	if err != nil {
 		logrus.Errorf("logic,redis publish err: %s", err.Error())
 		return
@@ -274,13 +297,24 @@ func (rpc *RpcLogic) PushRoom(ctx context.Context, args *proto.Send, reply *prot
 	sendData.FromUserName = args.FromUserName
 	sendData.Op = config.OpRoomSend
 	sendData.CreateTime = tools.GetNowDateTime()
+	sendData.SeqId = args.SeqId
 	bodyBytes, err = json.Marshal(sendData)
 	if err != nil {
 		logrus.Errorf("logic,PushRoom Marshal err:%s", err.Error())
 		return
 	}
 	logrus.Warnf("logic,pushRoom ,%d ,%s ", roomId, string(bodyBytes))
-	err = logic.RedisPublishRoomInfo(roomId, len(roomUserInfo), roomUserInfo, bodyBytes)
+
+	redisMsg := &proto.RedisMsg{
+		Op:           config.OpRoomSend,
+		RoomId:       roomId,
+		Count:        len(roomUserInfo),
+		Msg:          args.Msg,
+		RoomUserInfo: roomUserInfo,
+		SeqId:        sendData.SeqId,
+	}
+
+	err = logic.RedisPublishRoomInfo(redisMsg)
 	if err != nil {
 		logrus.Errorf("logic,PushRoom err:%s", err.Error())
 		return
@@ -320,7 +354,14 @@ func (rpc *RpcLogic) GetRoomInfo(ctx context.Context, args *proto.Send, reply *p
 	if len(roomUserInfo) == 0 {
 		return errors.New("getRoomInfo no this user")
 	}
-	err = logic.RedisPushRoomInfo(roomId, len(roomUserInfo), roomUserInfo)
+	var redisMsg = &proto.RedisMsg{
+		Op:           config.OpRoomInfoSend,
+		RoomId:       roomId,
+		Count:        len(roomUserInfo),
+		RoomUserInfo: roomUserInfo,
+		SeqId:        tools.GetSnowflakeId(),
+	}
+	err = logic.RedisPushRoomInfo(redisMsg)
 	if err != nil {
 		logrus.Errorf("logic,GetRoomInfo err:%s", err.Error())
 		return
@@ -364,13 +405,17 @@ func (rpc *RpcLogic) DisConnect(ctx context.Context, args *proto.DisConnectReque
 	roomUserKey := logic.getRoomUserKey(strconv.Itoa(args.RoomId))
 	// room user count --
 	if args.RoomId > 0 {
-	     RedisClient.Decr(logic.getRoomOnlineCountKey(fmt.Sprintf("%d", args.RoomId))).Result()
+		RedisClient.Decr(logic.getRoomOnlineCountKey(fmt.Sprintf("%d", args.RoomId))).Result()
 	}
 	// room login user--
 	if args.UserId != 0 {
 		err = RedisClient.HDel(roomUserKey, fmt.Sprintf("%d", args.UserId)).Err()
 		if err != nil {
 			logrus.Warnf("HDel getRoomUserKey err : %s", err)
+		}
+		err = RedisClient.Del(fmt.Sprintf("%s%s", config.RedisPrefix, args.UserId)).Err()
+		if err != nil {
+			logrus.Warnf("Del user err : %s", err)
 		}
 	}
 	//below code can optimize send a signal to queue,another process get a signal from queue,then push event to websocket
@@ -379,7 +424,15 @@ func (rpc *RpcLogic) DisConnect(ctx context.Context, args *proto.DisConnectReque
 		logrus.Warnf("RedisCli HGetAll roomUserInfo key:%s, err: %s", roomUserKey, err)
 	}
 	logrus.Warnf("logic,rpc redisMsg warn  ")
-	if err = logic.RedisPushRoomInfo(args.RoomId, len(roomUserInfo), roomUserInfo); err != nil {
+
+	var redisMsg = &proto.RedisMsg{
+		Op:           config.OpRoomInfoSend,
+		RoomId:       args.RoomId,
+		Count:        len(roomUserInfo),
+		RoomUserInfo: roomUserInfo,
+		SeqId:        tools.GetSnowflakeId(),
+	}
+	if err = logic.RedisPushRoomInfo(redisMsg); err != nil {
 		logrus.Warnf("publish RedisPublishRoomCount err: %s", err.Error())
 		return
 	}

@@ -6,11 +6,12 @@
 package proto
 
 type RedisMsg struct {
+	SeqId        string            `json:"seq"`
 	Op           int               `json:"op"`
 	ServerId     int               `json:"serverId,omitempty"`
 	RoomId       int               `json:"roomId,omitempty"`
 	UserId       int               `json:"userId,omitempty"`
-	Msg          []byte            `json:"msg"`
+	Msg          string            `json:"msg"`
 	Count        int               `json:"count"`
 	RoomUserInfo map[string]string `json:"roomUserInfo"`
 }

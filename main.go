@@ -27,10 +27,10 @@ import (
 	"syscall"
 )
 
-func main2()  {
+func main2() {
 	var send proto.Send
 	a := `{"op":3,"msg":"123","roomId":1}`
-	err :=json.Unmarshal([]byte(a),&send)
+	err := json.Unmarshal([]byte(a), &send)
 	if err != nil {
 		logrus.Errorf("logic,OnMessage fail,err:%s", err.Error())
 		return
@@ -40,7 +40,7 @@ func main2()  {
 	push(&send)
 }
 
-func push(send *proto.Send)  {
+func push(send *proto.Send) {
 	sendData := send
 	var bodyBytes2 []byte
 	bodyBytes2, err := json.Marshal(sendData)

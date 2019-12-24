@@ -82,13 +82,7 @@ func (logic *Logic) addRegistryPlugin(s *server.Server, network string, addr str
 	s.Plugins.Add(r)
 }
 
-func (logic *Logic) RedisPublishChannel(serverId int, toUserId int, msg []byte) (err error) {
-	redisMsg := proto.RedisMsg{
-		Op:       config.OpSingleSend,
-		ServerId: serverId,
-		UserId:   toUserId,
-		Msg:      msg,
-	}
+func (logic *Logic) RedisPublishChannel(redisMsg *proto.RedisMsg) (err error) {
 	redisMsgStr, err := json.Marshal(redisMsg)
 	if err != nil {
 		logrus.Errorf("logic,RedisPublishChannel Marshal err:%s", err.Error())
@@ -102,14 +96,8 @@ func (logic *Logic) RedisPublishChannel(serverId int, toUserId int, msg []byte) 
 	return
 }
 
-func (logic *Logic) RedisPublishRoomInfo(roomId int, count int, RoomUserInfo map[string]string, msg []byte) (err error) {
-	var redisMsg = &proto.RedisMsg{
-		Op:           config.OpRoomSend,
-		RoomId:       roomId,
-		Count:        count,
-		Msg:          msg,
-		RoomUserInfo: RoomUserInfo,
-	}
+func (logic *Logic) RedisPublishRoomInfo(redisMsg *proto.RedisMsg) (err error) {
+
 	redisMsgByte, err := json.Marshal(redisMsg)
 	if err != nil {
 		logrus.Errorf("logic,RedisPublishRoomInfo redisMsg error : %s", err.Error())
@@ -142,13 +130,7 @@ func (logic *Logic) RedisPushRoomCount(roomId int, count int) (err error) {
 	return
 }
 
-func (logic *Logic) RedisPushRoomInfo(roomId int, count int, roomUserInfo map[string]string) (err error) {
-	var redisMsg = &proto.RedisMsg{
-		Op:           config.OpRoomInfoSend,
-		RoomId:       roomId,
-		Count:        count,
-		RoomUserInfo: roomUserInfo,
-	}
+func (logic *Logic) RedisPushRoomInfo(redisMsg *proto.RedisMsg) (err error) {
 	redisMsgByte, err := json.Marshal(redisMsg)
 	if err != nil {
 		logrus.Errorf("logic,RedisPushRoomInfo redisMsg error : %s", err.Error())

@@ -28,7 +28,7 @@ func (c *Connect) serveWs(server *Server, w http.ResponseWriter, r *http.Request
 	}
 	//cross origin domain support
 	upGrader.CheckOrigin = func(r *http.Request) bool { return true }
-	vars := r.URL.Query();
+	vars := r.URL.Query()
 	auth := vars["auth"][0]
 
 	conn, err := upGrader.Upgrade(w, r, nil)
@@ -41,7 +41,7 @@ func (c *Connect) serveWs(server *Server, w http.ResponseWriter, r *http.Request
 	//default broadcast size eq 512
 	ch = NewChannel(server.Options.BroadcastSize)
 	ch.conn = conn
-	err = server.onConnect(auth,ch)
+	err = server.onConnect(auth, ch)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte(err.Error()))

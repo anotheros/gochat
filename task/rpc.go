@@ -7,7 +7,6 @@ package task
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/sirupsen/logrus"
 	"github.com/smallnest/rpcx/client"
 	"gochat/config"
@@ -39,8 +38,8 @@ func (task *Task) InitConnectRpcClient() (err error) {
 	return
 }
 
-func (task *Task) pushSingleToConnect(serverId int, userId int, msg []byte) {
-	logrus.Infof("pushSingleToConnect Body %s", string(msg))
+func (task *Task) pushSingleToConnect(serverId int, userId int, msg *proto.UserMsg) {
+	//logrus.Infof("pushSingleToConnect Body %s", string(msg))
 	pushMsgReq := &proto.PushMsgRequest{
 		UserId: userId,
 		Msg: proto.Msg{
@@ -59,13 +58,13 @@ func (task *Task) pushSingleToConnect(serverId int, userId int, msg []byte) {
 	logrus.Infof("reply %s", reply.Msg)
 }
 
-func (task *Task) broadcastRoomToConnect(roomId int, msg []byte) {
+func (task *Task) broadcastRoomToConnect(roomId int, seqId string, msg *proto.RoomMsg) {
 	pushRoomMsgReq := &proto.PushRoomMsgRequest{
 		RoomId: roomId,
 		Msg: proto.Msg{
 			Ver:       config.MsgVersion,
 			Operation: config.OpRoomSend,
-			SeqId:     tools.GetSnowflakeId(),
+			SeqId:     seqId,
 			Body:      msg,
 		},
 	}
@@ -78,15 +77,8 @@ func (task *Task) broadcastRoomToConnect(roomId int, msg []byte) {
 }
 
 func (task *Task) broadcastRoomCountToConnect(roomId, count int) {
-	msg := &proto.RedisRoomCountMsg{
+	msg := &proto.RoomInfoMsg{
 		Count: count,
-		Op:    config.OpRoomCountSend,
-	}
-	var body []byte
-	var err error
-	if body, err = json.Marshal(msg); err != nil {
-		logrus.Warnf("broadcastRoomCountToConnect  json.Marshal err :%s", err.Error())
-		return
 	}
 	pushRoomMsgReq := &proto.PushRoomMsgRequest{
 		RoomId: roomId,
@@ -94,7 +86,7 @@ func (task *Task) broadcastRoomCountToConnect(roomId, count int) {
 			Ver:       config.MsgVersion,
 			Operation: config.OpRoomCountSend,
 			SeqId:     tools.GetSnowflakeId(),
-			Body:      body,
+			Body:      msg,
 		},
 	}
 	reply := &proto.SuccessReply{}
@@ -106,25 +98,19 @@ func (task *Task) broadcastRoomCountToConnect(roomId, count int) {
 }
 
 func (task *Task) broadcastRoomInfoToConnect(roomId int, roomUserInfo map[string]string) {
-	msg := &proto.RedisRoomInfo{
+	msg := &proto.RoomInfoMsg{
 		Count:        len(roomUserInfo),
-		Op:           config.OpRoomInfoSend,
 		RoomUserInfo: roomUserInfo,
 		RoomId:       roomId,
 	}
-	var body []byte
-	var err error
-	if body, err = json.Marshal(msg); err != nil {
-		logrus.Warnf("broadcastRoomInfoToConnect  json.Marshal err :%s", err.Error())
-		return
-	}
+
 	pushRoomMsgReq := &proto.PushRoomMsgRequest{
 		RoomId: roomId,
 		Msg: proto.Msg{
 			Ver:       config.MsgVersion,
 			Operation: config.OpRoomInfoSend,
 			SeqId:     tools.GetSnowflakeId(),
-			Body:      body,
+			Body:      msg,
 		},
 	}
 	reply := &proto.SuccessReply{}

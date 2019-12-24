@@ -27,9 +27,9 @@ const (
 	RedisRoomOnlinePrefix = "gochat_room_online_count_"
 	MsgVersion            = 1
 	OpSingleSend          = 2 // single user
-	OpRoomSend            = 3 // send to room
+	OpRoomSend            = 3 // send to room  发消息到聊天室
 	OpRoomCountSend       = 4 // get online user count
-	OpRoomInfoSend        = 5 // send info to room
+	OpRoomInfoSend        = 5 // send info to room 发送用户信息等到聊天室
 )
 
 type Config struct {

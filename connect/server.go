@@ -6,6 +6,7 @@
 package connect
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
@@ -110,8 +111,13 @@ func (s *Server) writePump(ch *Channel) {
 				logrus.Warn(" ch.conn.NextWriter err :%s  ", err.Error())
 				return
 			}
-			logrus.Infof("message write body:%s", message.Body)
-			w.Write(message.Body)
+			j, err := json.Marshal(message)
+			if err != nil {
+				logrus.Warn("message json.Marshal err :%s  ", err.Error())
+				return
+			}
+			logrus.Infof("message write body:%s", j)
+			w.Write([]byte(j))
 			if err := w.Close(); err != nil {
 				return
 			}
@@ -159,18 +165,25 @@ func (s *Server) readPump(ch *Channel) {
 				logrus.Errorf("readPump ReadMessage err:%s", err.Error())
 				return
 			}
+			break
 		}
 		if message == nil {
-			return
+			break
 		}
 		logrus.Info(messageType)
-
 
 		//msg := &proto.Msg{}
 
 		//msgString:=msg.Body
 		// TODO 消息发给 逻辑层
-		msgRequest := &proto.MsgRequest{Msg: message, UserId: ch.userId}
+		logrus.Error(string(message))
+
+		msgRequest := &proto.Msg{}
+		err = json.Unmarshal(message, msgRequest)
+		if err != nil {
+			logrus.Warnf("json.Unmarshal(message) err:%s", err.Error())
+			break
+		}
 		reply, err := rpcConnectObj.OnMessage(msgRequest)
 		logrus.Info(reply)
 	}

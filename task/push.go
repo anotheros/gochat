@@ -16,8 +16,9 @@ import (
 type PushParams struct {
 	ServerId int
 	UserId   int
-	Msg      []byte
+	Msg      *proto.UserMsg
 	RoomId   int
+	SeqId    string
 }
 
 var pushChannel []chan *PushParams
@@ -52,13 +53,23 @@ func (task *Task) Push(msg string) {
 		pushChannel[rand.Int()%config.Conf.Task.TaskBase.PushChan] <- &PushParams{
 			ServerId: m.ServerId,
 			UserId:   m.UserId,
-			Msg:      m.Msg,
+			Msg:      redisMsg2UserMsg(m),
 		}
 	case config.OpRoomSend:
-		task.broadcastRoomToConnect(m.RoomId, m.Msg)
+		task.broadcastRoomToConnect(m.RoomId, m.SeqId, redisMsg2RoomMsg(m))
 	case config.OpRoomCountSend:
 		task.broadcastRoomCountToConnect(m.RoomId, m.Count)
 	case config.OpRoomInfoSend:
 		task.broadcastRoomInfoToConnect(m.RoomId, m.RoomUserInfo)
 	}
+}
+
+func redisMsg2RoomMsg(*proto.RedisMsg) *proto.RoomMsg {
+
+	return nil
+}
+
+func redisMsg2UserMsg(*proto.RedisMsg) *proto.UserMsg {
+
+	return nil
 }
