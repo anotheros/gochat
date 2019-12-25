@@ -20,6 +20,7 @@ import (
 
 var RpcConnectClientList map[int]client.XClient
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
+
 func (task *Task) InitConnectRpcClient() (err error) {
 	etcdConfig := config.Conf.Common.CommonEtcd
 	d := client.NewEtcdV3Discovery(etcdConfig.BasePath, etcdConfig.ServerPathConnect, []string{etcdConfig.Host}, nil)
@@ -48,13 +49,13 @@ func (task *Task) pushSingleToConnect(serverId int, seqId string, userId int, ms
 		SeqId:     seqId,
 		Body:      msg,
 	}
-	byteMsg ,err := json.Marshal(protoMsg)
+	byteMsg, err := json.Marshal(protoMsg)
 	if err != nil {
 		log.Log.Errorf(" pushSingleToConnect json err %v", err)
 	}
 	pushMsgReq := &proto.PushMsgRequest{
 		UserId: userId,
-		Msg: byteMsg,
+		Msg:    byteMsg,
 	}
 	reply := &proto.SuccessReply{}
 	//todo lock
@@ -72,13 +73,13 @@ func (task *Task) broadcastRoomToConnect(roomId int, seqId string, msg *proto.Ro
 		SeqId:     seqId,
 		Body:      msg,
 	}
-	byteMsg ,err := json.Marshal(protoMsg)
+	byteMsg, err := json.Marshal(protoMsg)
 	if err != nil {
 		log.Log.Errorf(" broadcastRoomToConnect json err %v", err)
 	}
 	pushRoomMsgReq := &proto.PushRoomMsgRequest{
 		RoomId: roomId,
-		Msg: byteMsg,
+		Msg:    byteMsg,
 	}
 	reply := &proto.SuccessReply{}
 	for _, rpc := range RpcConnectClientList {
@@ -98,13 +99,13 @@ func (task *Task) broadcastRoomCountToConnect(roomId, count int) {
 		SeqId:     tools.GetSnowflakeId(),
 		Body:      msg,
 	}
-	byteMsg ,err := json.Marshal(protoMsg)
+	byteMsg, err := json.Marshal(protoMsg)
 	if err != nil {
 		log.Log.Errorf(" broadcastRoomCountToConnect json err %v", err)
 	}
 	pushRoomMsgReq := &proto.PushRoomMsgRequest{
 		RoomId: roomId,
-		Msg: byteMsg,
+		Msg:    byteMsg,
 	}
 	reply := &proto.SuccessReply{}
 	for _, rpc := range RpcConnectClientList {
@@ -126,13 +127,13 @@ func (task *Task) broadcastRoomInfoToConnect(roomId int, roomUserInfo map[string
 		SeqId:     tools.GetSnowflakeId(),
 		Body:      msg,
 	}
-	byteMsg ,err := json.Marshal(protoMsg)
+	byteMsg, err := json.Marshal(protoMsg)
 	if err != nil {
 		log.Log.Errorf(" broadcastRoomInfoToConnect json err %v", err)
 	}
 	pushRoomMsgReq := &proto.PushRoomMsgRequest{
 		RoomId: roomId,
-		Msg: byteMsg,
+		Msg:    byteMsg,
 	}
 	reply := &proto.SuccessReply{}
 	for _, rpc := range RpcConnectClientList {

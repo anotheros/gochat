@@ -102,6 +102,7 @@ type RoomInfoMsg struct {
 	Count        int               `json:"count,omitempty"`
 	RoomUserInfo map[string]string `json:"roomUserInfo"`
 }
+
 //----end----
 // 内部传参
 type Send struct {

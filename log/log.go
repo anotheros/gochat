@@ -14,10 +14,10 @@ var Log *zap.SugaredLogger
 func init() {
 	hook := lumberjack.Logger{
 		Filename:   "./logs/log.log", // 日志文件路径
-		MaxSize:    1024,                // 每个日志文件保存的最大尺寸 单位：M
-		MaxBackups: 30000,               // 日志文件最多保存多少个备份
-		MaxAge:     700,                 // 文件最多保存多少天
-		Compress:   false,               // 是否压缩
+		MaxSize:    1024,             // 每个日志文件保存的最大尺寸 单位：M
+		MaxBackups: 30000,            // 日志文件最多保存多少个备份
+		MaxAge:     700,              // 文件最多保存多少天
+		Compress:   false,            // 是否压缩
 	}
 
 	encoderConfig := zapcore.EncoderConfig{

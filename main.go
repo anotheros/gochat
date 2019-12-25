@@ -26,15 +26,17 @@ import (
 	"os/signal"
 	"syscall"
 )
+
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
+
 func main2() {
-	 msg := proto.Msg{}
+	msg := proto.Msg{}
 	//a := `{"ver":1,"op":3,"seq":"123","body":{"msg": "大家好", "roomId": 1}}`
-	msg.Body = proto.RoomMsg{Msg:"大家好",RoomId:1}
-	msg.Ver =1
-	msg.Operation =3
+	msg.Body = proto.RoomMsg{Msg: "大家好", RoomId: 1}
+	msg.Ver = 1
+	msg.Operation = 3
 	msg.SeqId = "123"
-	msgbyte ,_:= json.Marshal(msg)
+	msgbyte, _ := json.Marshal(msg)
 	fmt.Println(msg)
 	fmt.Println(string(msgbyte))
 
@@ -46,7 +48,7 @@ func main2() {
 		log.Log.Errorf("logic,OnMessage fail,err:%s", err.Error())
 		return
 	}
-	room,_:= msg2.Body.(*proto.RoomMsg)
+	room, _ := msg2.Body.(*proto.RoomMsg)
 	//bodyJ ,_:=json.Marshal(msg2.Body)
 	//json.Unmarshal(bodyJ, &body)
 	//msg2.Body = body
@@ -54,11 +56,7 @@ func main2() {
 	fmt.Println(111)
 	fmt.Println(*room)
 
-
-
 }
-
-
 
 func main() {
 	var module string

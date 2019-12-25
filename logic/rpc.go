@@ -9,8 +9,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/pkg/errors"
-	"gochat/log"
 	"gochat/config"
+	"gochat/log"
 	"gochat/logic/dao"
 	"gochat/proto"
 	"gochat/tools"
@@ -180,7 +180,7 @@ func (rpc *RpcLogic) Logout(ctx context.Context, args *proto.LogoutRequest, repl
 func (rpc *RpcLogic) OnMessage(ctx context.Context, msgreq *proto.PushMsgRequest, reply *proto.SuccessReply) (err error) {
 
 	msg := proto.Msg{}
-	err = json.Unmarshal(msgreq.Msg,&msg)
+	err = json.Unmarshal(msgreq.Msg, &msg)
 	fromUserId := msgreq.UserId
 	msgString, err := json.Marshal(msg)
 	if err != nil {
@@ -197,26 +197,26 @@ func (rpc *RpcLogic) OnMessage(ctx context.Context, msgreq *proto.PushMsgRequest
 	switch msg.Operation {
 
 	case config.OpRoomSend:
-		bodyString ,errr := json.Marshal(msg.Body)
+		bodyString, errr := json.Marshal(msg.Body)
 		err = errr
 		roomMsg := proto.RoomMsg{}
-		err =json.Unmarshal(bodyString,&roomMsg)
+		err = json.Unmarshal(bodyString, &roomMsg)
 		//if roomMsg, ok := msg.Body.(*proto.RoomMsg); ok {
-			send.FromUserId = fromUserId
-			send.Msg = roomMsg.Msg
-			send.RoomId = roomMsg.RoomId
-			send.CreateTime = roomMsg.CreateTime
+		send.FromUserId = fromUserId
+		send.Msg = roomMsg.Msg
+		send.RoomId = roomMsg.RoomId
+		send.CreateTime = roomMsg.CreateTime
 		//}
 	case config.OpSingleSend:
-		bodyString ,errr := json.Marshal(msg.Body)
+		bodyString, errr := json.Marshal(msg.Body)
 		err = errr
 		userMsg := proto.UserMsg{}
-		err =json.Unmarshal(bodyString,&userMsg)
+		err = json.Unmarshal(bodyString, &userMsg)
 		//if userMsg, ok := msg.Body.(*proto.UserMsg); ok {
-			send.FromUserId = fromUserId
-			send.Msg = userMsg.Msg
-			send.ToUserId = userMsg.ToUserId
-			send.CreateTime = userMsg.CreateTime
+		send.FromUserId = fromUserId
+		send.Msg = userMsg.Msg
+		send.ToUserId = userMsg.ToUserId
+		send.CreateTime = userMsg.CreateTime
 		//}
 	default:
 		log.Log.Info(1)
@@ -267,15 +267,15 @@ func (rpc *RpcLogic) Push(ctx context.Context, args *proto.Send, reply *proto.Su
 	log.Log.Infof("logic,push ,%d ,%s ", sendData.ToUserId, string(bodyBytes))
 
 	redisMsg := &proto.RedisMsg{
-		Op:         config.OpSingleSend,
-		ServerId:   serverIdInt,
-		ToUserId:   sendData.ToUserId,
-		ToUserName: sendData.ToUserName,
-		FromUserId:sendData.FromUserId,
-		FromUserName:sendData.FromUserName,
-		Msg:        sendData.Msg,
-		SeqId:      sendData.SeqId,
-		CreateTime: sendData.CreateTime,
+		Op:           config.OpSingleSend,
+		ServerId:     serverIdInt,
+		ToUserId:     sendData.ToUserId,
+		ToUserName:   sendData.ToUserName,
+		FromUserId:   sendData.FromUserId,
+		FromUserName: sendData.FromUserName,
+		Msg:          sendData.Msg,
+		SeqId:        sendData.SeqId,
+		CreateTime:   sendData.CreateTime,
 	}
 
 	err = logic.RedisPublishChannel(redisMsg)
@@ -314,15 +314,14 @@ func (rpc *RpcLogic) PushRoom(ctx context.Context, args *proto.Send, reply *prot
 	sendData.CreateTime = tools.GetNowDateTime()
 	sendData.SeqId = args.SeqId
 
-
 	redisMsg := &proto.RedisMsg{
 		Op:           config.OpRoomSend,
 		RoomId:       roomId,
 		Count:        len(roomUserInfo),
 		Msg:          args.Msg,
 		RoomUserInfo: roomUserInfo,
-		FromUserId:sendData.FromUserId,
-		FromUserName:sendData.FromUserName,
+		FromUserId:   sendData.FromUserId,
+		FromUserName: sendData.FromUserName,
 		SeqId:        sendData.SeqId,
 		CreateTime:   sendData.CreateTime,
 	}

@@ -62,7 +62,6 @@ func (task *Task) Push(msg string) {
 	}
 }
 
-//TODO
 func redisMsg2RoomMsg(redisMsg *proto.RedisMsg) *proto.RoomMsg {
 
 	roomMsg := &proto.RoomMsg{}

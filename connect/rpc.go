@@ -135,7 +135,7 @@ func (rpc *RpcConnectPush) PushRoomMsg(ctx context.Context, pushRoomMsgReq *prot
 func (rpc *RpcConnectPush) PushRoomCount(ctx context.Context, pushRoomMsgReq *proto.PushRoomMsgRequest, successReply *proto.SuccessReply) (err error) {
 	successReply.Code = config.SuccessReplyCode
 	successReply.Msg = config.SuccessReplyMsg
-	msg,_:=json.Marshal(pushRoomMsgReq)
+	msg, _ := json.Marshal(pushRoomMsgReq)
 	log.Log.Infof("connect,PushRoomInfo msg %s", msg)
 	for _, bucket := range DefaultServer.Buckets {
 		bucket.BroadcastRoom(pushRoomMsgReq)
@@ -146,7 +146,7 @@ func (rpc *RpcConnectPush) PushRoomCount(ctx context.Context, pushRoomMsgReq *pr
 func (rpc *RpcConnectPush) PushRoomInfo(ctx context.Context, pushRoomMsgReq *proto.PushRoomMsgRequest, successReply *proto.SuccessReply) (err error) {
 	successReply.Code = config.SuccessReplyCode
 	successReply.Msg = config.SuccessReplyMsg
-	msg,_:=json.Marshal(pushRoomMsgReq)
+	msg, _ := json.Marshal(pushRoomMsgReq)
 	log.Log.Infof("connect,PushRoomInfo msg %s", msg)
 	for _, bucket := range DefaultServer.Buckets {
 		bucket.BroadcastRoom(pushRoomMsgReq)

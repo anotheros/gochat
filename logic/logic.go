@@ -11,7 +11,9 @@ import (
 	"gochat/log"
 	"runtime"
 )
+
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
+
 type Logic struct {
 }
 
