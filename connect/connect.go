@@ -55,7 +55,8 @@ func (c *Connect) Run() {
 		WriteBufferSize: 1024,
 		BroadcastSize:   512,
 	})
-
+	var dispatcher = NewDispatcher(config.MaxWorker)
+	dispatcher.Run()
 	//init Connect layer rpc server ,task layer will call this
 	if err := c.InitConnectRpcServer(); err != nil {
 		log.Log.Panicf("InitConnectRpcServer Fatal error: %s \n", err)
@@ -65,4 +66,5 @@ func (c *Connect) Run() {
 	if err := c.InitWebsocket(); err != nil {
 		log.Log.Panicf("Connect layer InitWebsocket() error:  %s \n", err.Error())
 	}
+
 }

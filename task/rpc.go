@@ -51,7 +51,7 @@ func (task *Task) pushSingleToConnect(serverId int, seqId string, userId int, ms
 	}
 	byteMsg, err := json.Marshal(protoMsg)
 	if err != nil {
-		log.Log.Errorf(" pushSingleToConnect json err %v", err)
+		log.Log.Errorf(" pushSingleToConnect json err %#v", err)
 	}
 	pushMsgReq := &proto.PushMsgRequest{
 		UserId: userId,
@@ -61,7 +61,7 @@ func (task *Task) pushSingleToConnect(serverId int, seqId string, userId int, ms
 	//todo lock
 	err = RpcConnectClientList[serverId].Call(context.Background(), "PushSingleMsg", pushMsgReq, reply)
 	if err != nil {
-		log.Log.Errorf(" pushSingleToConnect Call err %v", err)
+		log.Log.Errorf(" pushSingleToConnect Call err %#v", err)
 	}
 	log.Log.Infof("reply %s", reply.Msg)
 }
@@ -83,7 +83,7 @@ func (task *Task) broadcastRoomToConnect(roomId int, seqId string, msg *proto.Ro
 	}
 	reply := &proto.SuccessReply{}
 	for _, rpc := range RpcConnectClientList {
-		log.Log.Infof("broadcastRoomToConnect rpc  %v", rpc)
+		log.Log.Infof("broadcastRoomToConnect rpc  %#v", rpc)
 		rpc.Call(context.Background(), "PushRoomMsg", pushRoomMsgReq, reply)
 		log.Log.Infof("reply %s", reply.Msg)
 	}
@@ -101,7 +101,7 @@ func (task *Task) broadcastRoomCountToConnect(roomId, count int) {
 	}
 	byteMsg, err := json.Marshal(protoMsg)
 	if err != nil {
-		log.Log.Errorf(" broadcastRoomCountToConnect json err %v", err)
+		log.Log.Errorf(" broadcastRoomCountToConnect json err %#v", err)
 	}
 	pushRoomMsgReq := &proto.PushRoomMsgRequest{
 		RoomId: roomId,
@@ -109,7 +109,7 @@ func (task *Task) broadcastRoomCountToConnect(roomId, count int) {
 	}
 	reply := &proto.SuccessReply{}
 	for _, rpc := range RpcConnectClientList {
-		log.Log.Infof("broadcastRoomCountToConnect rpc  %v", rpc)
+		log.Log.Infof("broadcastRoomCountToConnect rpc  %#v", rpc)
 		rpc.Call(context.Background(), "PushRoomCount", pushRoomMsgReq, reply)
 		log.Log.Infof("reply %s", reply.Msg)
 	}
@@ -129,7 +129,7 @@ func (task *Task) broadcastRoomInfoToConnect(roomId int, roomUserInfo map[string
 	}
 	byteMsg, err := json.Marshal(protoMsg)
 	if err != nil {
-		log.Log.Errorf(" broadcastRoomInfoToConnect json err %v", err)
+		log.Log.Errorf(" broadcastRoomInfoToConnect json err %#v", err)
 	}
 	pushRoomMsgReq := &proto.PushRoomMsgRequest{
 		RoomId: roomId,
@@ -137,8 +137,8 @@ func (task *Task) broadcastRoomInfoToConnect(roomId int, roomUserInfo map[string
 	}
 	reply := &proto.SuccessReply{}
 	for _, rpc := range RpcConnectClientList {
-		log.Log.Infof("broadcastRoomInfoToConnect rpc  %v", rpc)
+		log.Log.Infof("broadcastRoomInfoToConnect rpc  %#v", rpc)
 		rpc.Call(context.Background(), "PushRoomInfo", pushRoomMsgReq, reply)
-		log.Log.Infof("broadcastRoomInfoToConnect rpc  reply %v", reply)
+		log.Log.Infof("broadcastRoomInfoToConnect rpc  reply %#v", reply)
 	}
 }

@@ -51,7 +51,7 @@ func (rpc *RpcConnect) Connect(connReq *proto.ConnectRequest) (uid int, err erro
 	reply := &proto.ConnectReply{}
 	err = logicRpcClient.Call(context.Background(), "Connect", connReq, reply)
 	if err != nil {
-		log.Log.Fatalf("failed to call: %v", err)
+		log.Log.Fatalf("failed to call: %#v", err)
 	}
 	uid = reply.UserId
 	log.Log.Infof("connect logic userId :%d", reply.UserId)
@@ -61,7 +61,7 @@ func (rpc *RpcConnect) Connect(connReq *proto.ConnectRequest) (uid int, err erro
 func (rpc *RpcConnect) DisConnect(disConnReq *proto.DisConnectRequest) (err error) {
 	reply := &proto.DisConnectReply{}
 	if err = logicRpcClient.Call(context.Background(), "DisConnect", disConnReq, reply); err != nil {
-		log.Log.Errorf("failed to call: %v", err)
+		log.Log.Errorf("failed to call: %#v", err)
 	}
 	return
 }
@@ -70,7 +70,7 @@ func (rpc *RpcConnect) CheckAuth(checkAuthReq *proto.CheckAuthRequest) (*proto.C
 	reply := &proto.CheckAuthResponse{}
 	err := logicRpcClient.Call(context.Background(), "CheckAuth", checkAuthReq, reply)
 	if err != nil {
-		log.Log.Fatalf("failed to call CheckAuth: %v", err)
+		log.Log.Fatalf("failed to call CheckAuth: %#v", err)
 	}
 	return reply, err
 }
@@ -79,7 +79,7 @@ func (rpc *RpcConnect) OnMessage(mgRequest *proto.PushMsgRequest) (reply *proto.
 
 	err = logicRpcClient.Call(context.Background(), "OnMessage", mgRequest, &reply)
 	if err != nil {
-		log.Log.Fatalf("failed to call OnMessage: %v", err)
+		log.Log.Fatalf("=========failed to call OnMessage: %#v", err)
 	}
 	return
 }
@@ -105,20 +105,25 @@ func (rpc *RpcConnectPush) PushSingleMsg(ctx context.Context, pushMsgReq *proto.
 		bucket  *Bucket
 		channel *Channel
 	)
-	log.Log.Info("rpc PushMsg :%v ", pushMsgReq)
+	log.Log.Infof("rpc PushMsg :%+v ", &pushMsgReq)
 	if pushMsgReq == nil {
-		log.Log.Errorf("rpc PushSingleMsg() args:(%v)", pushMsgReq)
+		log.Log.Errorf("rpc PushSingleMsg() args:(%+v)", &pushMsgReq)
 		return
 	}
 	bucket = DefaultServer.Bucket(pushMsgReq.UserId)
-	if channel = bucket.Channel(pushMsgReq.UserId); channel != nil {
-		err = channel.Push(pushMsgReq.Msg)
-		log.Log.Infof("DefaultServer Channel err nil ,args: %v", pushMsgReq)
+	channel = bucket.Channel(pushMsgReq.UserId)
+	if channel == nil {
+		log.Log.Warnf("DefaultServer Channel err nil ,args: %+v", pushMsgReq)
 		return
 	}
+	err = channel.Push(pushMsgReq.Msg)
+	if err != nil {
+		log.Log.Errorf("channel.Push %#v", err)
+	}
+
 	successReply.Code = config.SuccessReplyCode
 	successReply.Msg = config.SuccessReplyMsg
-	log.Log.Infof("successReply:%v", successReply)
+	log.Log.Infof("successReply:%+v", successReply)
 	return
 }
 
@@ -135,8 +140,8 @@ func (rpc *RpcConnectPush) PushRoomMsg(ctx context.Context, pushRoomMsgReq *prot
 func (rpc *RpcConnectPush) PushRoomCount(ctx context.Context, pushRoomMsgReq *proto.PushRoomMsgRequest, successReply *proto.SuccessReply) (err error) {
 	successReply.Code = config.SuccessReplyCode
 	successReply.Msg = config.SuccessReplyMsg
-	msg, _ := json.Marshal(pushRoomMsgReq)
-	log.Log.Infof("connect,PushRoomInfo msg %s", msg)
+
+	log.Log.Infof("connect,PushRoomInfo msg %#v", &pushRoomMsgReq)
 	for _, bucket := range DefaultServer.Buckets {
 		bucket.BroadcastRoom(pushRoomMsgReq)
 	}
@@ -146,8 +151,8 @@ func (rpc *RpcConnectPush) PushRoomCount(ctx context.Context, pushRoomMsgReq *pr
 func (rpc *RpcConnectPush) PushRoomInfo(ctx context.Context, pushRoomMsgReq *proto.PushRoomMsgRequest, successReply *proto.SuccessReply) (err error) {
 	successReply.Code = config.SuccessReplyCode
 	successReply.Msg = config.SuccessReplyMsg
-	msg, _ := json.Marshal(pushRoomMsgReq)
-	log.Log.Infof("connect,PushRoomInfo msg %s", msg)
+
+	log.Log.Infof("connect,PushRoomInfo msg %+v", &pushRoomMsgReq)
 	for _, bucket := range DefaultServer.Buckets {
 		bucket.BroadcastRoom(pushRoomMsgReq)
 	}

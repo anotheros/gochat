@@ -182,12 +182,8 @@ func (rpc *RpcLogic) OnMessage(ctx context.Context, msgreq *proto.PushMsgRequest
 	msg := proto.Msg{}
 	err = json.Unmarshal(msgreq.Msg, &msg)
 	fromUserId := msgreq.UserId
-	msgString, err := json.Marshal(msg)
-	if err != nil {
-		log.Log.Errorf("logic,OnMessage fail,err:%s", err.Error())
-		return
-	}
-	log.Log.Infof("logic,OnMessage :%s", msgString)
+
+	log.Log.Infof("logic,OnMessage :%#v", msg)
 
 	reply.Code = config.FailReplyCode
 	send := &proto.Send{}
@@ -219,7 +215,7 @@ func (rpc *RpcLogic) OnMessage(ctx context.Context, msgreq *proto.PushMsgRequest
 		send.CreateTime = userMsg.CreateTime
 		//}
 	default:
-		log.Log.Info(1)
+		log.Log.Info("未匹配类型")
 		return
 
 	}
@@ -246,12 +242,7 @@ single send msg
 func (rpc *RpcLogic) Push(ctx context.Context, args *proto.Send, reply *proto.SuccessReply) (err error) {
 	reply.Code = config.FailReplyCode
 	sendData := args
-	var bodyBytes []byte
-	bodyBytes, err = json.Marshal(sendData)
-	if err != nil {
-		log.Log.Errorf("logic,push msg fail,err:%s", err.Error())
-		return
-	}
+
 	logic := new(Logic)
 	userSidKey := logic.getUserKey(fmt.Sprintf("%d", sendData.ToUserId))
 	if userSidKey == "" {
@@ -264,7 +255,7 @@ func (rpc *RpcLogic) Push(ctx context.Context, args *proto.Send, reply *proto.Su
 		log.Log.Errorf("logic,push parse int fail:%s", err.Error())
 		return
 	}
-	log.Log.Infof("logic,push ,%d ,%s ", sendData.ToUserId, string(bodyBytes))
+	log.Log.Infof("logic,push ,%d ,%#v ", sendData.ToUserId, sendData)
 
 	redisMsg := &proto.RedisMsg{
 		Op:           config.OpSingleSend,
@@ -305,7 +296,7 @@ func (rpc *RpcLogic) PushRoom(ctx context.Context, args *proto.Send, reply *prot
 	//if len(roomUserInfo) == 0 {
 	//	return errors.New("no this user")
 	//}
-	var bodyBytes []byte
+
 	sendData.RoomId = roomId
 	sendData.Msg = args.Msg
 	sendData.FromUserId = args.FromUserId
@@ -326,12 +317,7 @@ func (rpc *RpcLogic) PushRoom(ctx context.Context, args *proto.Send, reply *prot
 		CreateTime:   sendData.CreateTime,
 	}
 
-	bodyBytes, err = json.Marshal(redisMsg)
-	if err != nil {
-		log.Log.Errorf("logic,PushRoom Marshal err:%s", err.Error())
-		return
-	}
-	log.Log.Warnf("logic,pushRoom ,%d ,%s ", roomId, string(bodyBytes))
+	log.Log.Warnf("logic,pushRoom ,%d ,%#v ", roomId, redisMsg)
 
 	err = logic.RedisPublishRoomInfo(redisMsg)
 	if err != nil {

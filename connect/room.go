@@ -7,6 +7,7 @@ package connect
 
 import (
 	"github.com/pkg/errors"
+	"gochat/log"
 	"sync"
 )
 
@@ -50,7 +51,10 @@ func (r *Room) Put(ch *Channel) (err error) {
 func (r *Room) Push(msg []byte) {
 	r.rLock.RLock()
 	for ch := r.next; ch != nil; ch = ch.Next {
-		ch.Push(msg)
+		err := ch.Push(msg)
+		if err != nil {
+			log.Log.Errorf("push %#v", err)
+		}
 	}
 	r.rLock.RUnlock()
 	return

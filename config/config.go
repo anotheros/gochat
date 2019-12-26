@@ -22,6 +22,7 @@ const (
 	SuccessReplyMsg       = "success"
 	QueueName             = "gochat_sub"
 	RedisBaseValidTime    = 86400
+	MaxWorker             = 100
 	RedisPrefix           = "gochat_"
 	RedisRoomPrefix       = "gochat_room_"
 	RedisRoomOnlinePrefix = "gochat_room_online_count_"

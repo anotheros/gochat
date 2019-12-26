@@ -52,9 +52,11 @@ func main2() {
 	//bodyJ ,_:=json.Marshal(msg2.Body)
 	//json.Unmarshal(bodyJ, &body)
 	//msg2.Body = body
-	fmt.Println(msg2)
-	fmt.Println(111)
-	fmt.Println(*room)
+	fmt.Printf("%v\n", msg2)
+	fmt.Print(111)
+	fmt.Printf("%+v\n", *room)
+	fmt.Printf("%#v\n", *room)
+	log.Log.Infof("%#v", *room)
 
 }
 

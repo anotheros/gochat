@@ -7,7 +7,7 @@ keyPath = ""
 bind = "0.0.0.0:7000"
 
 [connect-rpcAddress]
-address = "tcp@0.0.0.0:6912"
+address = "tcp@0.0.0.0:6912,tcp@0.0.0.0:6913"
 
 [connect-bucket]
 cpuNum = 4
