@@ -180,10 +180,14 @@ func (rpc *RpcLogic) Logout(ctx context.Context, args *proto.LogoutRequest, repl
 func (rpc *RpcLogic) OnMessage(ctx context.Context, msgreq *proto.PushMsgRequest, reply *proto.SuccessReply) (err error) {
 
 	msg := proto.Msg{}
-	err = json.Unmarshal(msgreq.Msg, &msg)
+	err2 := json.Unmarshal(msgreq.Msg, &msg)
 	fromUserId := msgreq.UserId
 
-	log.Log.Infof("logic,OnMessage :%#v", msg)
+	if err2 != nil {
+		log.Log.Warnf("logic,OnMessage :%#v", err2)
+		return
+	}
+
 
 	reply.Code = config.FailReplyCode
 	send := &proto.Send{}
@@ -239,9 +243,9 @@ func (rpc *RpcLogic) OnMessage(ctx context.Context, msgreq *proto.PushMsgRequest
 /**
 single send msg
 */
-func (rpc *RpcLogic) Push(ctx context.Context, args *proto.Send, reply *proto.SuccessReply) (err error) {
+func (rpc *RpcLogic) Push(ctx context.Context, sendData *proto.Send, reply *proto.SuccessReply) (err error) {
 	reply.Code = config.FailReplyCode
-	sendData := args
+
 
 	logic := new(Logic)
 	userSidKey := logic.getUserKey(fmt.Sprintf("%d", sendData.ToUserId))
@@ -428,7 +432,6 @@ func (rpc *RpcLogic) DisConnect(ctx context.Context, args *proto.DisConnectReque
 	if err != nil {
 		log.Log.Warnf("RedisCli HGetAll roomUserInfo key:%s, err: %s", roomUserKey, err)
 	}
-	log.Log.Warnf("logic,rpc redisMsg warn  ")
 
 	var redisMsg = &proto.RedisMsg{
 		Op:           config.OpRoomInfoSend,

@@ -20,6 +20,12 @@ type RedisMsg struct {
 	CreateTime   string            `json:"createTime"`
 }
 
+type TaskMessage struct {
+	Channel string
+	Pattern string
+	Payload string
+}
+
 type RedisRoomInfo struct {
 	Op           int               `json:"op"`
 	RoomId       int               `json:"roomId,omitempty"`

@@ -39,9 +39,9 @@ func (h *Hub) run() {
 		case client := <-h.register:
 			client.onConnect()
 			log.Log.Info(client)
-		case client := <-h.unregister:
+		case  <-h.unregister:
 
-			close(client.send)
+			//close(client.send)
 			h.Close()
 		case pushMsgRequest := <-h.receive:
 			log.Log.Info(pushMsgRequest)
@@ -61,5 +61,5 @@ func (h *Hub) Close() {
 	close(h.closeChan)
 	close(h.register)
 	close(h.unregister)
-	close(h.register)
+	close(h.receive)
 }

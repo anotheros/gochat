@@ -8,14 +8,18 @@ package task
 import (
 	"gochat/config"
 	"gochat/log"
+	"net/http"
+	_ "net/http/pprof"
 	"runtime"
 )
 
 type Task struct {
 }
 
+var task *Task
 func New() *Task {
-	return new(Task)
+	task = new(Task)
+	return task
 }
 
 func (task *Task) Run() {
@@ -32,4 +36,7 @@ func (task *Task) Run() {
 	}
 	//GoPush
 	task.GoPush()
+	go func (){http.ListenAndServe("localhost:5999", nil)}()
+	var dispatcher = NewDispatcher(config.MaxWorker)
+	dispatcher.Run()
 }

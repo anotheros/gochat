@@ -9,6 +9,7 @@ import (
 	"github.com/go-redis/redis"
 	"gochat/config"
 	"gochat/log"
+	"gochat/proto"
 	"gochat/tools"
 )
 
@@ -26,15 +27,22 @@ func (task *Task) InitSubscribeRedisClient() (err error) {
 	}
 
 	go func() {
-		redisSub := RedisClient.Subscribe(config.QueueName)
+
+		//redisSub := RedisClient.Subscribe(config.QueueName)
+		redisSub := RedisClient.PSubscribe("*")
 		ch := redisSub.Channel()
 		for {
-			msg, ok := <-ch
-			if !ok {
-				log.Log.Debugf("redisSub Channel !ok: %v", ok)
-				break
+			select {
+			case msg, ok := <-ch:
+				if !ok {
+					log.Log.Debugf("redisSub Channel !ok: %v", ok)
+					break
+				}
+				//task.Push(msg.Payload)
+				message := &proto.TaskMessage{Channel:msg.Channel,Pattern:msg.Pattern,Payload:msg.Payload}
+				job := Job{Payload{msg: message}}
+				JobQueue <- job
 			}
-			task.Push(msg.Payload)
 		}
 	}()
 	return

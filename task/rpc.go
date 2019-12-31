@@ -13,7 +13,6 @@ import (
 	"gochat/config"
 	"gochat/log"
 	"gochat/proto"
-	"gochat/tools"
 	"strconv"
 	"strings"
 )
@@ -36,7 +35,7 @@ func (task *Task) InitConnectRpcClient() (err error) {
 		}
 		d := client.NewPeer2PeerDiscovery(connectConf.Key, "")
 		RpcConnectClientList[int(serverId)] = client.NewXClient(etcdConfig.ServerPathConnect, client.Failtry, client.RandomSelect, d, client.DefaultOption)
-		log.Log.Infof("InitConnectRpcClient addr %s, v %+v", connectConf.Key, RpcConnectClientList[int(serverId)])
+		log.Log.Debugf("InitConnectRpcClient addr %s, v %+v", connectConf.Key, RpcConnectClientList[int(serverId)])
 	}
 	return
 }
@@ -63,7 +62,6 @@ func (task *Task) pushSingleToConnect(serverId int, seqId string, userId int, ms
 	if err != nil {
 		log.Log.Errorf(" pushSingleToConnect Call err %#v", err)
 	}
-	log.Log.Infof("reply %s", reply.Msg)
 }
 
 func (task *Task) broadcastRoomToConnect(roomId int, seqId string, msg *proto.RoomMsg) {
@@ -89,14 +87,14 @@ func (task *Task) broadcastRoomToConnect(roomId int, seqId string, msg *proto.Ro
 	}
 }
 
-func (task *Task) broadcastRoomCountToConnect(roomId, count int) {
+func (task *Task) broadcastRoomCountToConnect(roomId int,seqId string, count int) {
 	msg := &proto.RoomInfoMsg{
 		Count: count,
 	}
 	protoMsg := proto.Msg{
 		Ver:       config.MsgVersion,
 		Operation: config.OpRoomCountSend,
-		SeqId:     tools.GetSnowflakeId(),
+		SeqId:     seqId,
 		Body:      msg,
 	}
 	byteMsg, err := json.Marshal(protoMsg)
@@ -115,7 +113,7 @@ func (task *Task) broadcastRoomCountToConnect(roomId, count int) {
 	}
 }
 
-func (task *Task) broadcastRoomInfoToConnect(roomId int, roomUserInfo map[string]string) {
+func (task *Task) broadcastRoomInfoToConnect(roomId int,seqId string, roomUserInfo map[string]string) {
 	msg := &proto.RoomInfoMsg{
 		Count:        len(roomUserInfo),
 		RoomUserInfo: roomUserInfo,
@@ -124,7 +122,7 @@ func (task *Task) broadcastRoomInfoToConnect(roomId int, roomUserInfo map[string
 	protoMsg := proto.Msg{
 		Ver:       config.MsgVersion,
 		Operation: config.OpRoomInfoSend,
-		SeqId:     tools.GetSnowflakeId(),
+		SeqId:     seqId,
 		Body:      msg,
 	}
 	byteMsg, err := json.Marshal(protoMsg)

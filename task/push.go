@@ -36,29 +36,32 @@ func (task *Task) processSinglePush(ch chan *PushParams) {
 	var arg *PushParams
 	for {
 		arg = <-ch
+		//TODO 开个go程？
 		task.pushSingleToConnect(arg.ServerId, arg.SeqId, arg.UserId, arg.Msg)
 	}
 }
 
-func (task *Task) Push(msg string) {
+func (task *Task) Push(taskMsg *proto.TaskMessage) {
+	msg := taskMsg.Payload
 	m := &proto.RedisMsg{}
 	if err := json.Unmarshal([]byte(msg), m); err != nil {
 		log.Log.Infof(" json.Unmarshal err:%v ", err)
 	}
-	log.Log.Infof("push msg info %s", msg)
+	log.Log.Infof("push msg info %s", m.Msg)
 	switch m.Op {
 	case config.OpSingleSend:
 		pushChannel[rand.Int()%config.Conf.Task.TaskBase.PushChan] <- &PushParams{
 			ServerId: m.ServerId,
 			UserId:   m.ToUserId,
 			Msg:      redisMsg2UserMsg(m),
+			SeqId:m.SeqId,
 		}
 	case config.OpRoomSend:
 		task.broadcastRoomToConnect(m.RoomId, m.SeqId, redisMsg2RoomMsg(m))
 	case config.OpRoomCountSend:
-		task.broadcastRoomCountToConnect(m.RoomId, m.Count)
+		task.broadcastRoomCountToConnect(m.RoomId,m.SeqId, m.Count)
 	case config.OpRoomInfoSend:
-		task.broadcastRoomInfoToConnect(m.RoomId, m.RoomUserInfo)
+		task.broadcastRoomInfoToConnect(m.RoomId, m.SeqId,m.RoomUserInfo)
 	}
 }
 
@@ -70,6 +73,7 @@ func redisMsg2RoomMsg(redisMsg *proto.RedisMsg) *proto.RoomMsg {
 	roomMsg.RoomId = redisMsg.RoomId
 	roomMsg.FromUserId = redisMsg.FromUserId
 	roomMsg.FromUserName = redisMsg.FromUserName
+
 
 	return roomMsg
 }

@@ -11,6 +11,7 @@ import (
 	"gochat/log"
 	"gochat/proto"
 	"net/http"
+	"strconv"
 )
 
 func (c *Connect) InitWebsocket() error {
@@ -24,6 +25,23 @@ func (c *Connect) InitWebsocket() error {
 func (c *Connect) serveWs(server *Server, w http.ResponseWriter, r *http.Request) {
 
 	vars := r.URL.Query()
+	var userId int
+
+	userIdString := ""
+	if vars["userId"] != nil {
+		userIdString = vars["userId"][0]
+	}
+
+	if userIdString != "" {
+		 userIdd ,err :=strconv.Atoi(userIdString)
+		 if err != nil {
+			 log.Log.Error(userIdString)
+			 log.Log.Errorf("======%v",err)
+			 return
+		 }
+
+		 userId = userIdd
+	} else  {
 	auth := vars["auth"][0]
 	checkAuthRequest := &proto.CheckAuthRequest{
 		AuthToken: auth,
@@ -43,7 +61,8 @@ func (c *Connect) serveWs(server *Server, w http.ResponseWriter, r *http.Request
 
 		return
 	}
-
+		userId = reply.UserId
+	}
 	var upGrader = websocket.Upgrader{
 		ReadBufferSize:  server.Options.ReadBufferSize,
 		WriteBufferSize: server.Options.WriteBufferSize,
@@ -58,10 +77,10 @@ func (c *Connect) serveWs(server *Server, w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	//default send size eq 512
+
 	hub := newHub()
 	go hub.run()
-	userId := reply.UserId
+
 	ch := NewChannel(server, hub, conn, userId)
 
 	ch.hub.register <- ch

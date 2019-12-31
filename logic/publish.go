@@ -87,7 +87,7 @@ func (logic *Logic) RedisPublishChannel(redisMsg *proto.RedisMsg) (err error) {
 		log.Log.Errorf("logic,RedisPublishChannel Marshal err:%s", err.Error())
 		return err
 	}
-	redisChannel := config.QueueName
+	redisChannel := fmt.Sprintf(config.UserQueueName +"%d", redisMsg.ToUserId)
 	if err := RedisClient.Publish(redisChannel, redisMsgStr).Err(); err != nil {
 		log.Log.Errorf("logic,RedisPublishChannel err:%s", err.Error())
 		return err
@@ -102,7 +102,8 @@ func (logic *Logic) RedisPublishRoomInfo(redisMsg *proto.RedisMsg) (err error) {
 		log.Log.Errorf("logic,RedisPublishRoomInfo redisMsg error : %s", err.Error())
 		return
 	}
-	err = RedisClient.Publish(config.QueueName, redisMsgByte).Err()
+	redisChannel := fmt.Sprintf(config.RoomQueueName +"%d", redisMsg.ToUserId)
+	err = RedisClient.Publish(redisChannel, redisMsgByte).Err()
 	if err != nil {
 		log.Log.Errorf("logic,RedisPublishRoomInfo redisMsg error : %s", err.Error())
 		return
@@ -115,13 +116,15 @@ func (logic *Logic) RedisPushRoomCount(roomId int, count int) (err error) {
 		Op:     config.OpRoomCountSend,
 		RoomId: roomId,
 		Count:  count,
+		SeqId:tools.GetSnowflakeId(),
 	}
 	redisMsgByte, err := json.Marshal(redisMsg)
 	if err != nil {
 		log.Log.Errorf("logic,RedisPushRoomCount redisMsg error : %s", err.Error())
 		return
 	}
-	err = RedisClient.Publish(config.QueueName, redisMsgByte).Err()
+	redisChannel := fmt.Sprintf(config.RoomQueueName +"%d", redisMsg.ToUserId)
+	err = RedisClient.Publish(redisChannel, redisMsgByte).Err()
 	if err != nil {
 		log.Log.Errorf("logic,RedisPushRoomCount redisMsg error : %s", err.Error())
 		return
@@ -135,7 +138,8 @@ func (logic *Logic) RedisPushRoomInfo(redisMsg *proto.RedisMsg) (err error) {
 		log.Log.Errorf("logic,RedisPushRoomInfo redisMsg error : %s", err.Error())
 		return
 	}
-	err = RedisClient.Publish(config.QueueName, redisMsgByte).Err()
+	redisChannel := fmt.Sprintf(config.RoomQueueName +"%d", redisMsg.ToUserId)
+	err = RedisClient.Publish(redisChannel, redisMsgByte).Err()
 	if err != nil {
 		log.Log.Errorf("logic,RedisPushRoomInfo redisMsg error : %s", err.Error())
 		return

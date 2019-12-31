@@ -40,6 +40,14 @@ func NewChannel(server *Server, hub *Hub, conn *websocket.Conn, userId int) (c *
 }
 
 func (ch *Channel) Push(msg []byte) (err error) {
+	defer func() {
+
+		if err := recover(); err != nil {
+			log.Log.Errorf("push error : %#v",err)
+			log.Log.Errorf("%#v" , ch)
+		}
+
+	}()
 	select {
 	case ch.send <- msg:
 	default:
@@ -81,6 +89,7 @@ func (ch *Channel) writePump() {
 		ticker.Stop()
 		ch.conn.Close()
 		close(ch.send)
+		log.Log.Warnf("writePump defer")
 	}()
 
 	for {
@@ -131,6 +140,8 @@ func (ch *Channel) readPump() {
 		if ch.Room == nil || ch.userId == 0 {
 			log.Log.Info("==========roomId and userId eq 0")
 			ch.conn.Close()
+			ch.hub.Close()
+			log.Log.Warnf("readPump defer")
 			return
 		}
 		log.Log.Info("============exec disConnect ...")
@@ -142,6 +153,8 @@ func (ch *Channel) readPump() {
 			log.Log.Warnf("DisConnect err :%s", err.Error())
 		}
 		ch.conn.Close()
+		ch.hub.Close()
+		log.Log.Warnf("readPump defer")
 	}()
 	log.Log.Info("readPump ...")
 	ch.conn.SetReadLimit(s.Options.MaxMessageSize)
@@ -169,7 +182,7 @@ func (ch *Channel) readPump() {
 		//msg := &proto.Msg{}
 
 		//msgString:=msg.Body
-		// TODO 消息发给 逻辑层
+		//  消息发给 逻辑层
 		//log.Log.Debug(string(message))
 		pushMsgRequest := &proto.PushMsgRequest{Msg: message, UserId: ch.userId}
 		//ch.hub.receive <- pushMsgRequest

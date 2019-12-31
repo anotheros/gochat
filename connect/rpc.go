@@ -107,7 +107,7 @@ func (rpc *RpcConnectPush) PushSingleMsg(ctx context.Context, pushMsgReq *proto.
 	)
 	log.Log.Infof("rpc PushMsg :%+v ", &pushMsgReq)
 	if pushMsgReq == nil {
-		log.Log.Errorf("rpc PushSingleMsg() args:(%+v)", &pushMsgReq)
+		log.Log.Debugf("rpc PushSingleMsg() args:(%+v)", &pushMsgReq)
 		return
 	}
 	bucket = DefaultServer.Bucket(pushMsgReq.UserId)

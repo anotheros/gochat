@@ -1,14 +1,13 @@
-package connect
+package task
 
 import (
 	"fmt"
-	"gochat/log"
 	"gochat/proto"
 )
 
 var (
 	// MaxQueue presents max queue counts
-	MaxQueue = 1000
+	MaxQueue = 100
 )
 var JobQueue chan Job
 
@@ -25,7 +24,7 @@ type Job struct {
 
 // Payload represents the post payload
 type Payload struct {
-	msg *proto.PushMsgRequest
+	msg *proto.TaskMessage
 }
 
 // Worker represents the worker that executes the job
@@ -56,12 +55,7 @@ func (w Worker) Start() {
 
 				//j, _ := json.Marshal(job)
 				//log.Log.Info(string(j))
-				pushMsgRequest := job.Payload.msg
-				reply, err := rpcConnectObj.OnMessage(pushMsgRequest)
-				if err != nil {
-					log.Log.Errorf("===========%#v", err)
-				}
-				log.Log.Debug(reply)
+				task.Push(job.Payload.msg)
 
 			case <-w.quit:
 				return
@@ -91,7 +85,6 @@ func NewDispatcher(maxWorkers int) *Dispatcher {
 	}
 }
 
-
 // Run will create some workers
 func (d *Dispatcher) Run() {
 	// starting n number of workers
@@ -102,6 +95,7 @@ func (d *Dispatcher) Run() {
 
 	go d.dispatch()
 }
+
 /*base on job to select a worker.*/
 func (d *Dispatcher) dispatch0() {
 	for {

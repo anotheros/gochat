@@ -9,6 +9,8 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"gochat/config"
 	"gochat/log"
+	"net/http"
+	_ "net/http/pprof"
 	"runtime"
 	"time"
 )
@@ -50,13 +52,14 @@ func (c *Connect) Run() {
 		WriteWait:       10 * time.Second,
 		PongWait:        60 * time.Second,
 		PingPeriod:      54 * time.Second,
-		MaxMessageSize:  512,
+		MaxMessageSize:  1024*16,
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
-		BroadcastSize:   512,
+		BroadcastSize:   1024*16,
 	})
 	var dispatcher = NewDispatcher(config.MaxWorker)
 	dispatcher.Run()
+	go func (){http.ListenAndServe("localhost:3999", nil)}()
 	//init Connect layer rpc server ,task layer will call this
 	if err := c.InitConnectRpcServer(); err != nil {
 		log.Log.Panicf("InitConnectRpcServer Fatal error: %s \n", err)

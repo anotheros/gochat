@@ -14,7 +14,7 @@ cpuNum = 4
 channel = 1024
 room = 1024
 svrProto = 80
-routineAmount = 32
+routineAmount = 2
 routineSize = 20
 
 

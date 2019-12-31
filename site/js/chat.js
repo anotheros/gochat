@@ -30,13 +30,18 @@ $(document).ready(function () {
      websocket = new WebSocket(socketUrl + "?auth=" + auth);
     let data = {"authToken": getLocalStorage("authToken"), "roomId": 1};
     let data2 ={ver:1,op:3,seq:"123",body:{msg: "大家好", roomId: 1}}
-    let data3 ={ver:1,op:2,seq:"123",body:{msg: "你好好", toUserId: 6}}
+    var timestamp = (new Date()).valueOf().toString()
+    let data3 ={ver:1,op:2,seq:timestamp,body:{msg: "newgame", toUserId: 5}}
+
     //websocket onopen
     websocket.onopen = function (evt) {
-        websocket.send(JSON.stringify(data3));
+
+
         //getRoomInfo();
     };
-
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms))
+    }
     websocket.onmessage = function (evt) {
         let data = JSON.parse(evt.data);
         if (data.op == 3) {
@@ -112,13 +117,14 @@ $("#editText").keypress(function (e) {
 function send() {
     $("#tab_chat").click();
     $("#msg").animate({scrollTop: $("#msg").offset().top + 100000}, 1000);
-    let msg = document.getElementById('editText').value;
-    if (msg == "") {
+    let msg2 = document.getElementById('editText').value;
+    if (msg2 == "") {
         swal("send msg is empty!");
         return
     }
     document.getElementById('editText').value = '';
-    let jsonData = {ver:1,op:3,seq:"123",body:{msg: msg, roomId: 1}}
+    var timestamp = (new Date()).valueOf().toString()
+    let jsonData = `{"ver":1,"op":2,"seq":"`+timestamp+`","body":{"msg":"`+msg2+`","toUserId":5}}`
     /**$.ajax({
         type: "POST",
         dataType: "json",
@@ -136,7 +142,7 @@ function send() {
             swal("sorry, exception！");
         }
     });**/
-    websocket.send(JSON.stringify(jsonData));
+    websocket.send(jsonData);
 }
 
 

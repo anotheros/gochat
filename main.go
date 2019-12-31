@@ -13,6 +13,7 @@ import (
 	"gochat/log"
 	"gochat/site"
 	"gochat/task"
+	"runtime/pprof"
 
 	//"flag"
 	"fmt"
@@ -65,6 +66,16 @@ func main() {
 	flag.StringVar(&module, "module", "", "assign run module")
 	flag.Parse()
 	fmt.Println(fmt.Sprintf("start run %s module", module))
+
+	f, err := os.Create(module+".prof")
+	if err != nil {
+		log.Log.Fatal(err)
+	}
+	err =pprof.StartCPUProfile(f)
+	if err != nil {
+		log.Log.Fatal(err)
+	}
+	defer pprof.StopCPUProfile()
 	switch module {
 	case "logic":
 		logic.New().Run()
