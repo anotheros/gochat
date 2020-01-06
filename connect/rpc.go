@@ -79,7 +79,7 @@ func (rpc *RpcConnect) OnMessage(mgRequest *proto.PushMsgRequest) (reply *proto.
 
 	err = logicRpcClient.Call(context.Background(), "OnMessage", mgRequest, &reply)
 	if err != nil {
-		log.Log.Fatalf("=========failed to call OnMessage: %#v", err)
+		log.Log.Errorf("=========failed to call OnMessage: %#v", err)
 	}
 	return
 }

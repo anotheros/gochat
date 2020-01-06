@@ -6,14 +6,12 @@
 package connect
 
 import (
-	"flag"
 	jsoniter "github.com/json-iterator/go"
 	"gochat/config"
 	"gochat/log"
 	"net/http"
 	_ "net/http/pprof"
 	"runtime"
-	"syscall"
 	"time"
 )
 
@@ -21,10 +19,10 @@ var json = jsoniter.ConfigCompatibleWithStandardLibrary
 var DefaultServer *Server
 
 var (
-	workers   = flag.Int("workers", 128, "max workers count")
-	queue     = flag.Int("queue", 1, "workers task queue size")
-	ioTimeout = flag.Duration("io_timeout", time.Millisecond*100, "i/o operations timeout")
-	hubping = newHub()
+	workers   =  128
+	queue     =  1
+	ioTimeout =  time.Millisecond*100
+	Hubping *Hub
 )
 
 type Connect struct {
@@ -35,15 +33,17 @@ func New() *Connect {
 }
 
 func (c *Connect) Run() {
-
+/**
 	var rLimit syscall.Rlimit
 	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit); err != nil {
+		log.Log.Error(err)
 		panic(err)
 	}
 	rLimit.Cur = rLimit.Max
 	if err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit); err != nil {
-		panic(err)
-	}
+		log.Log.Error(err)
+		panic(1)
+	}**/
 	// get Connect layer config
 	connectConfig := config.Conf.Connect
 
@@ -82,8 +82,8 @@ func (c *Connect) Run() {
 	if err := c.InitConnectRpcServer(); err != nil {
 		log.Log.Panicf("InitConnectRpcServer Fatal error: %s \n", err)
 	}
-
-	go hubping.run()
+	Hubping = newHub()
+	go Hubping.run()
 	//start Connect layer server handler persistent connection
 	if err := c.InitWebsocket(); err != nil {
 		log.Log.Panicf("Connect layer InitWebsocket() error:  %s \n", err.Error())

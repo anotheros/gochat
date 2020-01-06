@@ -6,20 +6,20 @@
 package connect
 
 import (
-	"github.com/gobwas/httphead"
 	"github.com/gobwas/ws"
 	"github.com/mailru/easygo/netpoll"
 	"gochat/config"
 	"gochat/gopool"
 	"gochat/log"
 	"net"
+	"strconv"
 	"time"
 )
 
 var (
 	// Make pool of X size, Y sized work queue and one pre-spawned
 	// goroutine.
-	pool = gopool.NewPool(*workers, *queue, 1000)
+	pool = gopool.NewPool(128, 100, 4)
 	//chat = NewChat(pool)
 	exit   = make(chan struct{})
 	poller netpoll.Poller
@@ -41,19 +41,33 @@ func init() {
 func handle(conn net.Conn) {
 	// NOTE: we wrap conn here to show that ws could work with any kind of
 	// io.ReadWriter.
-	safeConn := deadliner{conn, *ioTimeout}
+	safeConn := deadliner{conn, ioTimeout}
+	var userId int
 	u := ws.Upgrader{
 		OnHeader: func(key, value []byte) error {
-			if string(key) != "Cookie" {
+			log.Log.Infof("key %s,value %s",key,string(value))
+			if string(key) != "Auth" {
 				return nil
 			}
-			ok := httphead.ScanCookie(value, func(key, value []byte) bool {
+			/**ok := httphead.ScanCookie(value, func(key, value []byte) bool {
 				// Check session here or do some other stuff with cookies.
 				// Maybe copy some values for future use.
-				return true
+				return false
 			})
 			if ok {
 				return nil
+			}**/
+			if string(key) == "Auth" {
+				userIds := string(value)
+				userIdd,err := strconv.Atoi(userIds)
+				if err != nil {
+					return ws.RejectConnectionError(
+						ws.RejectionReason("bad cookie"),
+						ws.RejectionStatus(400),
+					)
+				}
+				userId = userIdd
+				return  nil
 			}
 			return ws.RejectConnectionError(
 				ws.RejectionReason("bad cookie"),
@@ -74,7 +88,7 @@ func handle(conn net.Conn) {
 	// Register incoming user in chat.
 	//user := chat.Register(safeConn)
 
-	user := NewChannel(DefaultServer,pool,1,conn)
+	user := NewChannel(DefaultServer,pool,userId,conn)
 	// Create netpoll event descriptor for conn.
 	// We want to handle only read events of it.
 	desc := netpoll.Must(netpoll.HandleRead(conn))

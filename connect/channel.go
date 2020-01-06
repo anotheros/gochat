@@ -165,7 +165,7 @@ func (u *Channel) writePing()  {
 	defer u.io.Unlock()
 	err := w.Flush()
 	if err != nil {
-		hubping.unregister <- u
+		Hubping.unregister <- u
 	}
 	return
 }
@@ -190,7 +190,7 @@ func (u *Channel) writer() {
 	}
 	_,err := w.Write(b.Bytes())
 	if err != nil {
-		hubping.unregister <- u
+		Hubping.unregister <- u
 	}
 
 	return
