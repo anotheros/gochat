@@ -54,14 +54,14 @@ func (task *Task) Push(taskMsg *proto.TaskMessage) {
 			ServerId: m.ServerId,
 			UserId:   m.ToUserId,
 			Msg:      redisMsg2UserMsg(m),
-			SeqId:m.SeqId,
+			SeqId:    m.SeqId,
 		}
 	case config.OpRoomSend:
 		task.broadcastRoomToConnect(m.RoomId, m.SeqId, redisMsg2RoomMsg(m))
 	case config.OpRoomCountSend:
-		task.broadcastRoomCountToConnect(m.RoomId,m.SeqId, m.Count)
+		task.broadcastRoomCountToConnect(m.RoomId, m.SeqId, m.Count)
 	case config.OpRoomInfoSend:
-		task.broadcastRoomInfoToConnect(m.RoomId, m.SeqId,m.RoomUserInfo)
+		task.broadcastRoomInfoToConnect(m.RoomId, m.SeqId, m.RoomUserInfo)
 	}
 }
 
@@ -73,7 +73,6 @@ func redisMsg2RoomMsg(redisMsg *proto.RedisMsg) *proto.RoomMsg {
 	roomMsg.RoomId = redisMsg.RoomId
 	roomMsg.FromUserId = redisMsg.FromUserId
 	roomMsg.FromUserName = redisMsg.FromUserName
-
 
 	return roomMsg
 }

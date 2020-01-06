@@ -188,7 +188,6 @@ func (rpc *RpcLogic) OnMessage(ctx context.Context, msgreq *proto.PushMsgRequest
 		return
 	}
 
-
 	reply.Code = config.FailReplyCode
 	send := &proto.Send{}
 	send.SeqId = msg.SeqId
@@ -246,13 +245,15 @@ single send msg
 func (rpc *RpcLogic) Push(ctx context.Context, sendData *proto.Send, reply *proto.SuccessReply) (err error) {
 	reply.Code = config.FailReplyCode
 
-
 	logic := new(Logic)
 	userSidKey := logic.getUserKey(fmt.Sprintf("%d", sendData.ToUserId))
 	if userSidKey == "" {
 		return
 	}
 	serverId := RedisSessClient.Get(userSidKey).Val()
+	if serverId == "" {
+		return
+	}
 	var serverIdInt int
 	serverIdInt, err = strconv.Atoi(serverId)
 	if err != nil {

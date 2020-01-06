@@ -39,7 +39,7 @@ func (task *Task) InitSubscribeRedisClient() (err error) {
 					break
 				}
 				//task.Push(msg.Payload)
-				message := &proto.TaskMessage{Channel:msg.Channel,Pattern:msg.Pattern,Payload:msg.Payload}
+				message := &proto.TaskMessage{Channel: msg.Channel, Pattern: msg.Pattern, Payload: msg.Payload}
 				job := Job{Payload{msg: message}}
 				JobQueue <- job
 			}

@@ -21,9 +21,9 @@ import (
 
 //in fact, Channel it's a user Connect session
 type Channel struct {
-	Room   *Room
-	Next   *Channel
-	Prev   *Channel
+	Room *Room
+	Next *Channel
+	Prev *Channel
 
 	io     sync.Mutex
 	conn   io.ReadWriteCloser
@@ -54,8 +54,8 @@ func (ch *Channel) Push(msg []byte) (err error) {
 	defer func() {
 
 		if err := recover(); err != nil {
-			log.Log.Errorf("push error : %#v",err)
-			log.Log.Errorf("%#v" , ch)
+			log.Log.Errorf("push error : %#v", err)
+			log.Log.Errorf("%#v", ch)
 		}
 
 	}()
@@ -92,6 +92,7 @@ func (ch *Channel) onConnect() error {
 	}
 	return nil
 }
+
 // Receive reads next message from user's underlying connection.
 // It blocks until full message received.
 func (u *Channel) Receive() error {
@@ -158,7 +159,7 @@ func (u *Channel) write(x interface{}) error {
 	return w.Flush()
 }
 
-func (u *Channel) writePing()  {
+func (u *Channel) writePing() {
 	w := wsutil.NewWriter(u.conn, ws.StateServerSide, ws.OpPing)
 
 	u.io.Lock()
@@ -188,11 +189,10 @@ func (u *Channel) writer() {
 	for bts := range u.out {
 		b.Write(bts)
 	}
-	_,err := w.Write(b.Bytes())
+	_, err := w.Write(b.Bytes())
 	if err != nil {
 		Hubping.unregister <- u
 	}
 
 	return
 }
-

@@ -67,11 +67,11 @@ func main() {
 	flag.Parse()
 	fmt.Println(fmt.Sprintf("start run %s module", module))
 
-	f, err := os.Create(module+".prof")
+	f, err := os.Create(module + ".prof")
 	if err != nil {
 		log.Log.Fatal(err)
 	}
-	err =pprof.StartCPUProfile(f)
+	err = pprof.StartCPUProfile(f)
 	if err != nil {
 		log.Log.Fatal(err)
 	}

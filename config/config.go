@@ -21,8 +21,8 @@ const (
 	FailReplyCode         = 1
 	SuccessReplyMsg       = "success"
 	QueueName             = "gochat_sub"
-	UserQueueName             = "gochat_sub_user_"
-	RoomQueueName             = "gochat_sub_room_"
+	UserQueueName         = "gochat_sub_user_"
+	RoomQueueName         = "gochat_sub_room_"
 	RedisBaseValidTime    = 86400
 	MaxWorker             = 40
 	RedisPrefix           = "gochat_"

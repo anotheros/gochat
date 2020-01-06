@@ -87,7 +87,7 @@ func (task *Task) broadcastRoomToConnect(roomId int, seqId string, msg *proto.Ro
 	}
 }
 
-func (task *Task) broadcastRoomCountToConnect(roomId int,seqId string, count int) {
+func (task *Task) broadcastRoomCountToConnect(roomId int, seqId string, count int) {
 	msg := &proto.RoomInfoMsg{
 		Count: count,
 	}
@@ -113,7 +113,7 @@ func (task *Task) broadcastRoomCountToConnect(roomId int,seqId string, count int
 	}
 }
 
-func (task *Task) broadcastRoomInfoToConnect(roomId int,seqId string, roomUserInfo map[string]string) {
+func (task *Task) broadcastRoomInfoToConnect(roomId int, seqId string, roomUserInfo map[string]string) {
 	msg := &proto.RoomInfoMsg{
 		Count:        len(roomUserInfo),
 		RoomUserInfo: roomUserInfo,

@@ -17,6 +17,7 @@ type Task struct {
 }
 
 var task *Task
+
 func New() *Task {
 	task = new(Task)
 	return task
@@ -36,7 +37,7 @@ func (task *Task) Run() {
 	}
 	//GoPush
 	task.GoPush()
-	go func (){http.ListenAndServe("localhost:5999", nil)}()
+	go func() { http.ListenAndServe("localhost:5999", nil) }()
 	var dispatcher = NewDispatcher(config.MaxWorker)
 	dispatcher.Run()
 }

@@ -19,10 +19,10 @@ var json = jsoniter.ConfigCompatibleWithStandardLibrary
 var DefaultServer *Server
 
 var (
-	workers   =  128
-	queue     =  1
-	ioTimeout =  time.Millisecond*100
-	Hubping *Hub
+	workers   = 128
+	queue     = 1
+	ioTimeout = time.Millisecond * 100
+	Hubping   *Hub
 )
 
 type Connect struct {
@@ -33,7 +33,7 @@ func New() *Connect {
 }
 
 func (c *Connect) Run() {
-/**
+	/**
 	var rLimit syscall.Rlimit
 	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit); err != nil {
 		log.Log.Error(err)
@@ -70,14 +70,14 @@ func (c *Connect) Run() {
 		WriteWait:       10 * time.Second,
 		PongWait:        60 * time.Second,
 		PingPeriod:      54 * time.Second,
-		MaxMessageSize:  1024*16,
+		MaxMessageSize:  1024 * 16,
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
-		BroadcastSize:   1024*16,
+		BroadcastSize:   1024 * 16,
 	})
 	//var dispatcher = NewDispatcher(config.MaxWorker)
 	//dispatcher.Run()
-	go func (){http.ListenAndServe("localhost:3999", nil)}()
+	go func() { http.ListenAndServe("localhost:3999", nil) }()
 	//init Connect layer rpc server ,task layer will call this
 	if err := c.InitConnectRpcServer(); err != nil {
 		log.Log.Panicf("InitConnectRpcServer Fatal error: %s \n", err)

@@ -6,13 +6,14 @@
 package connect
 
 import (
+	"errors"
 	"github.com/gobwas/ws"
 	"github.com/mailru/easygo/netpoll"
 	"gochat/config"
 	"gochat/gopool"
 	"gochat/log"
+	"gochat/proto"
 	"net"
-	"strconv"
 	"time"
 )
 
@@ -23,7 +24,6 @@ var (
 	//chat = NewChat(pool)
 	exit   = make(chan struct{})
 	poller netpoll.Poller
-
 )
 
 func init() {
@@ -33,6 +33,25 @@ func init() {
 		log.Log.Fatal(err)
 	}
 }
+
+func login(auth string) ( int, error) {
+	checkAuthRequest := &proto.CheckAuthRequest{
+		AuthToken: auth,
+	}
+
+	reply, err := rpcConnectObj.CheckAuth(checkAuthRequest)
+	if err != nil {
+		log.Log.Errorf("serverWs CheckAuth err:%s", err.Error())
+		return 0,err
+	}
+	if reply.Code != config.SuccessReplyCode {
+		log.Log.Errorf("serverWs CheckAuth err:%s", reply.Code)
+		return 0,errors.New(string(reply.Code))
+	}
+
+	return reply.UserId,nil
+}
+
 // handle is a new incoming connection handler.
 // It upgrades TCP connection to WebSocket, registers netpoll listener on
 // it and stores it as a chat user in Chat instance.
@@ -45,7 +64,7 @@ func handle(conn net.Conn) {
 	var userId int
 	u := ws.Upgrader{
 		OnHeader: func(key, value []byte) error {
-			log.Log.Infof("key %s,value %s",key,string(value))
+			log.Log.Infof("key %s,value %s", key, string(value))
 			if string(key) != "Auth" {
 				return nil
 			}
@@ -58,8 +77,9 @@ func handle(conn net.Conn) {
 				return nil
 			}**/
 			if string(key) == "Auth" {
-				userIds := string(value)
-				userIdd,err := strconv.Atoi(userIds)
+
+				auth := string(value)
+				userIdd,err :=login(auth)
 				if err != nil {
 					return ws.RejectConnectionError(
 						ws.RejectionReason("bad cookie"),
@@ -67,7 +87,7 @@ func handle(conn net.Conn) {
 					)
 				}
 				userId = userIdd
-				return  nil
+				return nil
 			}
 			return ws.RejectConnectionError(
 				ws.RejectionReason("bad cookie"),
@@ -88,7 +108,7 @@ func handle(conn net.Conn) {
 	// Register incoming user in chat.
 	//user := chat.Register(safeConn)
 
-	user := NewChannel(DefaultServer,pool,userId,conn)
+	user := NewChannel(DefaultServer, pool, userId, conn)
 	// Create netpoll event descriptor for conn.
 	// We want to handle only read events of it.
 	desc := netpoll.Must(netpoll.HandleRead(conn))
@@ -124,7 +144,7 @@ func handle(conn net.Conn) {
 func nameConn(conn net.Conn) string {
 	return conn.LocalAddr().String() + " > " + conn.RemoteAddr().String()
 }
-func (c *Connect) InitWebsocket() (err error ){
+func (c *Connect) InitWebsocket() (err error) {
 	// Create incoming connections listener.
 	ln, err := net.Listen("tcp", config.Conf.Connect.ConnectWebsocket.Bind)
 	if err != nil {

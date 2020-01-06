@@ -28,7 +28,7 @@ func (logic *Logic) Run() {
 	logicConfig := config.Conf.Logic
 
 	runtime.GOMAXPROCS(logicConfig.LogicBase.CpuNum)
-	go func (){http.ListenAndServe("localhost:4999", nil)}()
+	go func() { http.ListenAndServe("localhost:4999", nil) }()
 	//init publish redis
 	if err := logic.InitPublishRedisClient(); err != nil {
 		log.Log.Panicf("logic init publishRedisClient fail,err:%s", err.Error())

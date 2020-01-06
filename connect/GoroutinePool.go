@@ -91,7 +91,6 @@ func NewDispatcher(maxWorkers int) *Dispatcher {
 	}
 }
 
-
 // Run will create some workers
 func (d *Dispatcher) Run() {
 	// starting n number of workers
@@ -102,6 +101,7 @@ func (d *Dispatcher) Run() {
 
 	go d.dispatch()
 }
+
 /*base on job to select a worker.*/
 func (d *Dispatcher) dispatch0() {
 	for {
