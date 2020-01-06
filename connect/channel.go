@@ -25,6 +25,7 @@ type Channel struct {
 	Prev *Channel
 
 	io         sync.Mutex
+	rpcLock         sync.Mutex
 	writerOnce sync.Once
 	conn       io.ReadWriteCloser
 	pool       *gopool.Pool
@@ -102,6 +103,8 @@ func (u *Channel) Receive() error {
 	}
 	//TODO
 	log.Log.Infof(string(message))
+	u.rpcLock.Lock()
+	defer  u.rpcLock.Unlock()
 	pushMsgRequest := &proto.PushMsgRequest{Msg: message, UserId: u.userId}
 	reply, err := rpcConnectObj.OnMessage(pushMsgRequest)
 	if err != nil {
@@ -191,7 +194,8 @@ func (u *Channel) writer() {
 	//u.io.Lock()
 	//defer u.io.Unlock()
 	for bts := range u.out {
-		buf.Write(bts)
+		b := bts
+		buf.Write(b)
 		err := buf.Flush()
 		if err != nil {
 			log.Log.Error(err.Error())
