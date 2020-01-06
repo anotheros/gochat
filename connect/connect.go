@@ -6,6 +6,7 @@
 package connect
 
 import (
+	"flag"
 	jsoniter "github.com/json-iterator/go"
 	"gochat/config"
 	"gochat/log"
@@ -17,6 +18,13 @@ import (
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 var DefaultServer *Server
+
+var (
+	workers   = flag.Int("workers", 128, "max workers count")
+	queue     = flag.Int("queue", 1, "workers task queue size")
+	ioTimeout = flag.Duration("io_timeout", time.Millisecond*100, "i/o operations timeout")
+	hubping = newHub()
+)
 
 type Connect struct {
 }
@@ -65,6 +73,7 @@ func (c *Connect) Run() {
 		log.Log.Panicf("InitConnectRpcServer Fatal error: %s \n", err)
 	}
 
+	go hubping.run()
 	//start Connect layer server handler persistent connection
 	if err := c.InitWebsocket(); err != nil {
 		log.Log.Panicf("Connect layer InitWebsocket() error:  %s \n", err.Error())

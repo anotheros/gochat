@@ -222,3 +222,6 @@ gochat is licensed under the MIT License.
 
 
 
+- [ ] 百万链接
+- [ ] 单用户发送信息串行，多用户并行
+- [ ] 各种崩溃

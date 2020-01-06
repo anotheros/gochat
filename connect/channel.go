@@ -23,17 +23,15 @@ type Channel struct {
 	send   chan []byte
 	userId int
 	conn   *websocket.Conn
-	hub    *Hub
 	server *Server
 }
 
-func NewChannel(server *Server, hub *Hub, conn *websocket.Conn, userId int) (c *Channel) {
+func NewChannel(server *Server,  conn *websocket.Conn, userId int) (c *Channel) {
 	c = new(Channel)
 	c.send = make(chan []byte, server.Options.BroadcastSize)
 	c.conn = conn
 	c.server = server
 	c.userId = userId
-	c.hub = hub
 	c.Next = nil
 	c.Prev = nil
 	return
@@ -140,7 +138,6 @@ func (ch *Channel) readPump() {
 		if ch.Room == nil || ch.userId == 0 {
 			log.Log.Info("==========roomId and userId eq 0")
 			ch.conn.Close()
-			ch.hub.Close()
 			log.Log.Warnf("readPump defer")
 			return
 		}
@@ -153,7 +150,6 @@ func (ch *Channel) readPump() {
 			log.Log.Warnf("DisConnect err :%s", err.Error())
 		}
 		ch.conn.Close()
-		ch.hub.Close()
 		log.Log.Warnf("readPump defer")
 	}()
 	log.Log.Info("readPump ...")
