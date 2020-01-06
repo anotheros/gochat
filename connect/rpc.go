@@ -116,14 +116,14 @@ func (rpc *RpcConnectPush) PushSingleMsg(ctx context.Context, pushMsgReq *proto.
 		log.Log.Warnf("DefaultServer Channel err nil ,args: %+v", pushMsgReq)
 		return
 	}
-	err = channel.Push(pushMsgReq.Msg)
+	err = channel.Send(pushMsgReq.Msg)
 	if err != nil {
 		log.Log.Errorf("channel.Push %#v", err)
 	}
 
 	successReply.Code = config.SuccessReplyCode
 	successReply.Msg = config.SuccessReplyMsg
-	log.Log.Infof("successReply:%+v", successReply)
+	//	log.Log.Infof("successReply:%+v", successReply)
 	return
 }
 

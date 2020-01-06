@@ -6,7 +6,6 @@
 package connect
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"github.com/gobwas/ws"
@@ -25,12 +24,13 @@ type Channel struct {
 	Next *Channel
 	Prev *Channel
 
-	io     sync.Mutex
-	conn   io.ReadWriteCloser
-	pool   *gopool.Pool
-	userId int
-	name   string
-	out    chan []byte
+	io         sync.Mutex
+	writerOnce sync.Once
+	conn       io.ReadWriteCloser
+	pool       *gopool.Pool
+	userId     int
+	name       string
+	out        chan []byte
 	//ticker *time.Ticker
 	server *Server
 }
@@ -50,22 +50,13 @@ func NewChannel(server *Server, pool *gopool.Pool, userId int, conn io.ReadWrite
 	return
 }
 
-func (ch *Channel) Push(msg []byte) (err error) {
-	defer func() {
-
-		if err := recover(); err != nil {
-			log.Log.Errorf("push error : %#v", err)
-			log.Log.Errorf("%#v", ch)
-		}
-
-	}()
-	select {
-	case ch.out <- msg:
-	default:
-	}
-	return
+func (ch *Channel) onDisConnect() error {
+	s := ch.server
+	disConnReq := &proto.DisConnectRequest{}
+	disConnReq.UserId = ch.userId
+	err := s.operator.DisConnect(disConnReq)
+	return err
 }
-
 func (ch *Channel) onConnect() error {
 	s := ch.server
 
@@ -110,21 +101,35 @@ func (u *Channel) Receive() error {
 		return nil
 	}
 	//TODO
+	log.Log.Infof(string(message))
 	pushMsgRequest := &proto.PushMsgRequest{Msg: message, UserId: u.userId}
 	reply, err := rpcConnectObj.OnMessage(pushMsgRequest)
 	if err != nil {
 		log.Log.Errorf("===========%#v", err)
 	}
-	log.Log.Debug(reply)
+	log.Log.Debugf("%#v",reply)
+
+
 	return nil
 }
 
 func (u *Channel) Send(p []byte) (err error) {
-	u.io.Lock()
-	defer u.io.Unlock()
-	u.pool.Schedule(u.writer)
+	defer func() {
+
+		if err := recover(); err != nil {
+			log.Log.Errorf("push error : %#v", err)
+			log.Log.Errorf("%#v", u)
+		}
+
+	}()
+	//u.io.Lock()
+	//defer u.io.Unlock()
+	u.writerOnce.Do(func() {
+		u.pool.Schedule(u.writer)
+	})
 
 	u.out <- p
+
 	return
 }
 
@@ -182,16 +187,17 @@ func (u *Channel) writeRaw(p []byte) error {
 
 func (u *Channel) writer() {
 
-	w := wsutil.NewWriter(u.conn, ws.StateServerSide, ws.OpText)
-	u.io.Lock()
-	defer u.io.Unlock()
-	b := bytes.Buffer{}
+	buf := wsutil.NewWriter(u.conn, ws.StateServerSide, ws.OpText)
+	//u.io.Lock()
+	//defer u.io.Unlock()
 	for bts := range u.out {
-		b.Write(bts)
-	}
-	_, err := w.Write(b.Bytes())
-	if err != nil {
-		Hubping.unregister <- u
+		buf.Write(bts)
+		err := buf.Flush()
+		if err != nil {
+			log.Log.Error(err.Error())
+			Hubping.unregister <- u
+			return
+		}
 	}
 
 	return

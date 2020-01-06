@@ -20,7 +20,7 @@ import (
 var (
 	// Make pool of X size, Y sized work queue and one pre-spawned
 	// goroutine.
-	pool = gopool.NewPool(128, 100, 4)
+	pool = gopool.NewPool(8, 1, 4)
 	//chat = NewChat(pool)
 	exit   = make(chan struct{})
 	poller netpoll.Poller
@@ -34,7 +34,7 @@ func init() {
 	}
 }
 
-func login(auth string) ( int, error) {
+func login(auth string) (int, error) {
 	checkAuthRequest := &proto.CheckAuthRequest{
 		AuthToken: auth,
 	}
@@ -42,14 +42,14 @@ func login(auth string) ( int, error) {
 	reply, err := rpcConnectObj.CheckAuth(checkAuthRequest)
 	if err != nil {
 		log.Log.Errorf("serverWs CheckAuth err:%s", err.Error())
-		return 0,err
+		return 0, err
 	}
 	if reply.Code != config.SuccessReplyCode {
 		log.Log.Errorf("serverWs CheckAuth err:%s", reply.Code)
-		return 0,errors.New(string(reply.Code))
+		return 0, errors.New(string(reply.Code))
 	}
 
-	return reply.UserId,nil
+	return reply.UserId, nil
 }
 
 // handle is a new incoming connection handler.
@@ -64,7 +64,6 @@ func handle(conn net.Conn) {
 	var userId int
 	u := ws.Upgrader{
 		OnHeader: func(key, value []byte) error {
-			log.Log.Infof("key %s,value %s", key, string(value))
 			if string(key) != "Auth" {
 				return nil
 			}
@@ -79,7 +78,7 @@ func handle(conn net.Conn) {
 			if string(key) == "Auth" {
 
 				auth := string(value)
-				userIdd,err :=login(auth)
+				userIdd, err := login(auth)
 				if err != nil {
 					return ws.RejectConnectionError(
 						ws.RejectionReason("bad cookie"),
@@ -98,17 +97,18 @@ func handle(conn net.Conn) {
 	// Zero-copy upgrade to WebSocket connection.
 	hs, err := u.Upgrade(safeConn)
 	if err != nil {
-		log.Log.Infof("%s: upgrade error: %v", nameConn(conn), err)
+		log.Log.Infof("%s: upgrade error: %v", nameConn(safeConn), err)
 		conn.Close()
 		return
 	}
 
-	log.Log.Infof("%s: established websocket connection: %+v", nameConn(conn), hs)
+	log.Log.Infof("%s: established websocket connection: %+v", nameConn(safeConn), hs)
 
 	// Register incoming user in chat.
 	//user := chat.Register(safeConn)
 
-	user := NewChannel(DefaultServer, pool, userId, conn)
+	user := NewChannel(DefaultServer, pool, userId, safeConn)
+
 	// Create netpoll event descriptor for conn.
 	// We want to handle only read events of it.
 	desc := netpoll.Must(netpoll.HandleRead(conn))
@@ -139,6 +139,8 @@ func handle(conn net.Conn) {
 		})
 
 	})
+
+	Hubping.register <- user
 }
 
 func nameConn(conn net.Conn) string {

@@ -51,7 +51,7 @@ func (r *Room) Put(ch *Channel) (err error) {
 func (r *Room) Push(msg []byte) {
 	r.rLock.RLock()
 	for ch := r.next; ch != nil; ch = ch.Next {
-		err := ch.Push(msg)
+		err := ch.Send(msg)
 		if err != nil {
 			log.Log.Errorf("push %#v", err)
 		}

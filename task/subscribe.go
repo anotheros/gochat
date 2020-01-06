@@ -38,10 +38,12 @@ func (task *Task) InitSubscribeRedisClient() (err error) {
 					log.Log.Debugf("redisSub Channel !ok: %v", ok)
 					break
 				}
-				//task.Push(msg.Payload)
 				message := &proto.TaskMessage{Channel: msg.Channel, Pattern: msg.Pattern, Payload: msg.Payload}
+
+				task.Push(message)
+				/**message := &proto.TaskMessage{Channel: msg.Channel, Pattern: msg.Pattern, Payload: msg.Payload}
 				job := Job{Payload{msg: message}}
-				JobQueue <- job
+				JobQueue <- job**/
 			}
 		}
 	}()

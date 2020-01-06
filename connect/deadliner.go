@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"gochat/log"
 	"net"
 	"time"
 )
@@ -13,10 +14,15 @@ type deadliner struct {
 }
 
 func (d deadliner) Write(p []byte) (int, error) {
+	log.Log.Info("deadliner Write")
 	if err := d.Conn.SetWriteDeadline(time.Now().Add(d.t)); err != nil {
 		return 0, err
 	}
-	return d.Conn.Write(p)
+	n, err := d.Conn.Write(p)
+	if err != nil {
+		log.Log.Error(err.Error())
+	}
+	return n, err
 }
 
 func (d deadliner) Read(p []byte) (int, error) {

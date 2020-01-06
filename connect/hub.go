@@ -30,6 +30,7 @@ func newHub() *Hub {
 	return &Hub{
 		//receive:    make(chan *proto.PushMsgRequest),
 		server:     DefaultServer,
+		ns:         make(map[int]*Channel),
 		register:   make(chan *Channel),
 		unregister: make(chan *Channel),
 		closeChan:  make(chan struct{}),
@@ -42,11 +43,11 @@ func (h *Hub) run() {
 	ticker := time.NewTicker(s.Options.PingPeriod)
 	for {
 		select {
-		case user := <-h.register:
-			//client.onConnect()
-			h.ns[user.userId] = user
+		case client := <-h.register:
+			client.onConnect()
+			h.ns[client.userId] = client
 
-		case user := <-h.unregister:
+		case client := <-h.unregister:
 
 			defer func() {
 
@@ -55,11 +56,12 @@ func (h *Hub) run() {
 				}
 
 			}()
-			if _, has := h.ns[user.userId]; has {
-				delete(h.ns, user.userId)
+			if _, has := h.ns[client.userId]; has {
+				delete(h.ns, client.userId)
 			}
-			user.conn.Close()
-			close(user.out)
+			client.conn.Close()
+			close(client.out)
+			client.onDisConnect()
 		case pushMsgRequest := <-h.receive:
 			log.Log.Info(pushMsgRequest)
 		//  收到消息
