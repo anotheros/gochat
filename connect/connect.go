@@ -13,6 +13,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"runtime"
+	"syscall"
 	"time"
 )
 
@@ -34,6 +35,15 @@ func New() *Connect {
 }
 
 func (c *Connect) Run() {
+
+	var rLimit syscall.Rlimit
+	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit); err != nil {
+		panic(err)
+	}
+	rLimit.Cur = rLimit.Max
+	if err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit); err != nil {
+		panic(err)
+	}
 	// get Connect layer config
 	connectConfig := config.Conf.Connect
 
@@ -65,8 +75,8 @@ func (c *Connect) Run() {
 		WriteBufferSize: 1024,
 		BroadcastSize:   1024*16,
 	})
-	var dispatcher = NewDispatcher(config.MaxWorker)
-	dispatcher.Run()
+	//var dispatcher = NewDispatcher(config.MaxWorker)
+	//dispatcher.Run()
 	go func (){http.ListenAndServe("localhost:3999", nil)}()
 	//init Connect layer rpc server ,task layer will call this
 	if err := c.InitConnectRpcServer(); err != nil {

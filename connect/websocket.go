@@ -19,11 +19,11 @@ import (
 var (
 	// Make pool of X size, Y sized work queue and one pre-spawned
 	// goroutine.
-	pool = gopool.NewPool(*workers, *queue, 1)
+	pool = gopool.NewPool(*workers, *queue, 1000)
 	//chat = NewChat(pool)
 	exit   = make(chan struct{})
 	poller netpoll.Poller
-	handle func(conn net.Conn)
+
 )
 
 func init() {
@@ -32,80 +32,79 @@ func init() {
 	if err != nil {
 		log.Log.Fatal(err)
 	}
+}
+// handle is a new incoming connection handler.
+// It upgrades TCP connection to WebSocket, registers netpoll listener on
+// it and stores it as a chat user in Chat instance.
+//
+// We will call it below within accept() loop.
+func handle(conn net.Conn) {
+	// NOTE: we wrap conn here to show that ws could work with any kind of
+	// io.ReadWriter.
+	safeConn := deadliner{conn, *ioTimeout}
+	u := ws.Upgrader{
+		OnHeader: func(key, value []byte) error {
+			if string(key) != "Cookie" {
+				return nil
+			}
+			ok := httphead.ScanCookie(value, func(key, value []byte) bool {
+				// Check session here or do some other stuff with cookies.
+				// Maybe copy some values for future use.
+				return true
+			})
+			if ok {
+				return nil
+			}
+			return ws.RejectConnectionError(
+				ws.RejectionReason("bad cookie"),
+				ws.RejectionStatus(400),
+			)
+		},
+	}
+	// Zero-copy upgrade to WebSocket connection.
+	hs, err := u.Upgrade(safeConn)
+	if err != nil {
+		log.Log.Infof("%s: upgrade error: %v", nameConn(conn), err)
+		conn.Close()
+		return
+	}
 
-	// handle is a new incoming connection handler.
-	// It upgrades TCP connection to WebSocket, registers netpoll listener on
-	// it and stores it as a chat user in Chat instance.
-	//
-	// We will call it below within accept() loop.
-	handle = func(conn net.Conn) {
-		// NOTE: we wrap conn here to show that ws could work with any kind of
-		// io.ReadWriter.
-		safeConn := deadliner{conn, *ioTimeout}
-		u := ws.Upgrader{
-			OnHeader: func(key, value []byte) error {
-				if string(key) != "Cookie" {
-					return nil
-				}
-				ok := httphead.ScanCookie(value, func(key, value []byte) bool {
-					// Check session here or do some other stuff with cookies.
-					// Maybe copy some values for future use.
-					return true
-				})
-				if ok {
-					return nil
-				}
-				return ws.RejectConnectionError(
-					ws.RejectionReason("bad cookie"),
-					ws.RejectionStatus(400),
-				)
-			},
-		}
-		// Zero-copy upgrade to WebSocket connection.
-		hs, err := u.Upgrade(safeConn)
-		if err != nil {
-			log.Log.Infof("%s: upgrade error: %v", nameConn(conn), err)
-			conn.Close()
+	log.Log.Infof("%s: established websocket connection: %+v", nameConn(conn), hs)
+
+	// Register incoming user in chat.
+	//user := chat.Register(safeConn)
+
+	user := NewChannel(DefaultServer,pool,1,conn)
+	// Create netpoll event descriptor for conn.
+	// We want to handle only read events of it.
+	desc := netpoll.Must(netpoll.HandleRead(conn))
+
+	// Subscribe to events about conn.
+	poller.Start(desc, func(ev netpoll.Event) {
+		if ev&(netpoll.EventReadHup|netpoll.EventHup) != 0 {
+			// When ReadHup or Hup received, this mean that client has
+			// closed at least write end of the connection or connections
+			// itself. So we want to stop receive events about such conn
+			// and remove it from the chat registry.
+			poller.Stop(desc)
+			//chat.Remove(user)
 			return
 		}
-
-		log.Log.Infof("%s: established websocket connection: %+v", nameConn(conn), hs)
-
-		// Register incoming user in chat.
-		//user := chat.Register(safeConn)
-
-		user := NewUser(DefaultServer,pool,1,conn)
-		// Create netpoll event descriptor for conn.
-		// We want to handle only read events of it.
-		desc := netpoll.Must(netpoll.HandleRead(conn))
-
-		// Subscribe to events about conn.
-		poller.Start(desc, func(ev netpoll.Event) {
-			if ev&(netpoll.EventReadHup|netpoll.EventHup) != 0 {
-				// When ReadHup or Hup received, this mean that client has
-				// closed at least write end of the connection or connections
-				// itself. So we want to stop receive events about such conn
-				// and remove it from the chat registry.
+		// Here we can read some new message from connection.
+		// We can not read it right here in callback, because then we will
+		// block the poller's inner loop.
+		// We do not want to spawn a new goroutine to read single message.
+		// But we want to reuse previously spawned goroutine.
+		pool.Schedule(func() {
+			if err := user.Receive(); err != nil {
+				// When receive failed, we can only disconnect broken
+				// connection and stop to receive events about it.
 				poller.Stop(desc)
-				//chat.Remove(user)
-				return
+
 			}
-			// Here we can read some new message from connection.
-			// We can not read it right here in callback, because then we will
-			// block the poller's inner loop.
-			// We do not want to spawn a new goroutine to read single message.
-			// But we want to reuse previously spawned goroutine.
-			pool.Schedule(func() {
-					if err := user.Receive(); err != nil {
-					// When receive failed, we can only disconnect broken
-					// connection and stop to receive events about it.
-					poller.Stop(desc)
-
-				}
-			})
-
 		})
-	}
+
+	})
 }
 
 func nameConn(conn net.Conn) string {

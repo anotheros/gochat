@@ -19,10 +19,10 @@ type Hub struct {
 	receive   chan *proto.PushMsgRequest
 	closeChan chan struct{}
 	// Register requests from the clients.
-	register chan *User
-	ns       map[int]*User
+	register chan *Channel
+	ns       map[int]*Channel
 	// Unregister requests from clients.
-	unregister chan *User
+	unregister chan *Channel
 	server     *Server
 }
 
@@ -30,8 +30,8 @@ func newHub() *Hub {
 	return &Hub{
 		//receive:    make(chan *proto.PushMsgRequest),
 		server:     DefaultServer,
-		register:   make(chan *User),
-		unregister: make(chan *User),
+		register:   make(chan *Channel),
+		unregister: make(chan *Channel),
 		closeChan:  make(chan struct{}),
 	}
 }

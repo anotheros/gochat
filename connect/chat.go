@@ -1,4 +1,5 @@
 package connect
+/**
 
 import (
 	"bytes"
@@ -140,3 +141,4 @@ func (u *User) writer() {
 
 	return
 }
+**/

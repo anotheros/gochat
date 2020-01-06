@@ -6,13 +6,17 @@
 package connect
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
-	"github.com/gorilla/websocket"
+	"github.com/gobwas/ws"
+	"github.com/gobwas/ws/wsutil"
 	"gochat/config"
+	"gochat/gopool"
 	"gochat/log"
 	"gochat/proto"
-	"time"
+	"io"
+	"sync"
 )
 
 //in fact, Channel it's a user Connect session
@@ -20,16 +24,25 @@ type Channel struct {
 	Room   *Room
 	Next   *Channel
 	Prev   *Channel
-	send   chan []byte
+
+	io     sync.Mutex
+	conn   io.ReadWriteCloser
+	pool   *gopool.Pool
 	userId int
-	conn   *websocket.Conn
+	name   string
+	out    chan []byte
+	//ticker *time.Ticker
 	server *Server
 }
 
-func NewChannel(server *Server,  conn *websocket.Conn, userId int) (c *Channel) {
+func NewChannel(server *Server, pool *gopool.Pool, userId int, conn io.ReadWriteCloser) (c *Channel) {
 	c = new(Channel)
-	c.send = make(chan []byte, server.Options.BroadcastSize)
+	c.server = server
+	c.pool = pool
+	c.userId = userId
 	c.conn = conn
+	//u.ticker = time.NewTicker(server.Options.PingPeriod)
+	c.out = make(chan []byte, server.Options.BroadcastSize)
 	c.server = server
 	c.userId = userId
 	c.Next = nil
@@ -47,7 +60,7 @@ func (ch *Channel) Push(msg []byte) (err error) {
 
 	}()
 	select {
-	case ch.send <- msg:
+	case ch.out <- msg:
 	default:
 	}
 	return
@@ -79,112 +92,107 @@ func (ch *Channel) onConnect() error {
 	}
 	return nil
 }
-func (ch *Channel) writePump() {
-	//PingPeriod default eq 54s
-	s := ch.server
-	ticker := time.NewTicker(s.Options.PingPeriod)
-	defer func() {
-		ticker.Stop()
-		ch.conn.Close()
-		close(ch.send)
-		log.Log.Warnf("writePump defer")
-	}()
-
-	for {
-		select {
-		case message, ok := <-ch.send:
-			//write data dead time , like http timeout , default 10s
-			err := ch.conn.SetWriteDeadline(time.Now().Add(s.Options.WriteWait))
-			if err != nil {
-				log.Log.Warn(" ch.conn.SetWriteDeadline err :%s  ", err.Error())
-				return
-			}
-			if !ok {
-				log.Log.Warn("SetWriteDeadline not ok")
-				ch.conn.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
-			w, err := ch.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				log.Log.Warn(" ch.conn.NextWriter err :%s  ", err.Error())
-				return
-			}
-
-			log.Log.Infof("message write body:%s", string(message))
-			n, err := w.Write(message)
-			log.Log.Info(n)
-			if err != nil {
-				log.Log.Warn(" w.Write err :%s  ", err.Error())
-
-			}
-			if err := w.Close(); err != nil {
-				return
-			}
-		case <-ticker.C:
-			//heartbeat，if ping error will exit and close current websocket conn
-			ch.conn.SetWriteDeadline(time.Now().Add(s.Options.WriteWait))
-			log.Log.Infof("websocket.PingMessage :%v", websocket.PingMessage)
-			if err := ch.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
-			}
-		}
+// Receive reads next message from user's underlying connection.
+// It blocks until full message received.
+func (u *Channel) Receive() error {
+	message, code, err := u.readRaw()
+	if err != nil {
+		u.conn.Close()
+		return err
 	}
-}
+	if code == ws.OpPong {
 
-func (ch *Channel) readPump() {
-	s := ch.server
-	defer func() {
-		log.Log.Info("=========start exec disConnect ...")
-		if ch.Room == nil || ch.userId == 0 {
-			log.Log.Info("==========roomId and userId eq 0")
-			ch.conn.Close()
-			log.Log.Warnf("readPump defer")
-			return
-		}
-		log.Log.Info("============exec disConnect ...")
-		disConnectRequest := new(proto.DisConnectRequest)
-		disConnectRequest.RoomId = ch.Room.Id
-		disConnectRequest.UserId = ch.userId
-		s.Bucket(ch.userId).DeleteChannel(ch)
-		if err := s.operator.DisConnect(disConnectRequest); err != nil {
-			log.Log.Warnf("DisConnect err :%s", err.Error())
-		}
-		ch.conn.Close()
-		log.Log.Warnf("readPump defer")
-	}()
-	log.Log.Info("readPump ...")
-	ch.conn.SetReadLimit(s.Options.MaxMessageSize)
-	ch.conn.SetReadDeadline(time.Now().Add(s.Options.PongWait))
-	ch.conn.SetPongHandler(func(string) error {
-		ch.conn.SetReadDeadline(time.Now().Add(s.Options.PongWait))
 		return nil
-	})
-
-	for {
-		_, message, err := ch.conn.ReadMessage()
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Log.Errorf("===============readPump ReadMessage err:%s", err.Error())
-				return
-			}
-			break
-		}
-		if message == nil {
-			log.Log.Errorf("===============message == nil")
-			continue
-		}
-		//log.Log.Info(messageType)
-
-		//msg := &proto.Msg{}
-
-		//msgString:=msg.Body
-		//  消息发给 逻辑层
-		//log.Log.Debug(string(message))
-		pushMsgRequest := &proto.PushMsgRequest{Msg: message, UserId: ch.userId}
-		//ch.hub.receive <- pushMsgRequest
-
-		job := Job{Payload{msg: pushMsgRequest}}
-		JobQueue <- job
-
 	}
+	if message == nil {
+		// Handled some control message.
+		return nil
+	}
+	//TODO
+	pushMsgRequest := &proto.PushMsgRequest{Msg: message, UserId: u.userId}
+	reply, err := rpcConnectObj.OnMessage(pushMsgRequest)
+	if err != nil {
+		log.Log.Errorf("===========%#v", err)
+	}
+	log.Log.Debug(reply)
+	return nil
 }
+
+func (u *Channel) Send(p []byte) (err error) {
+	u.io.Lock()
+	defer u.io.Unlock()
+	u.pool.Schedule(u.writer)
+
+	u.out <- p
+	return
+}
+
+// readRequests reads json-rpc request from connection.
+// It takes io mutex.
+func (u *Channel) readRaw() ([]byte, ws.OpCode, error) {
+	u.io.Lock()
+	defer u.io.Unlock()
+
+	h, code, err := wsutil.ReadClientData(u.conn)
+	if err != nil {
+		return nil, code, err
+	}
+	if code.IsControl() {
+		return nil, code, nil //TODO
+	}
+
+	return h, code, nil
+}
+
+func (u *Channel) write(x interface{}) error {
+	w := wsutil.NewWriter(u.conn, ws.StateServerSide, ws.OpText)
+	encoder := json.NewEncoder(w)
+
+	u.io.Lock()
+	defer u.io.Unlock()
+
+	if err := encoder.Encode(x); err != nil {
+		return err
+	}
+
+	return w.Flush()
+}
+
+func (u *Channel) writePing()  {
+	w := wsutil.NewWriter(u.conn, ws.StateServerSide, ws.OpPing)
+
+	u.io.Lock()
+	defer u.io.Unlock()
+	err := w.Flush()
+	if err != nil {
+		hubping.unregister <- u
+	}
+	return
+}
+
+func (u *Channel) writeRaw(p []byte) error {
+	u.io.Lock()
+	defer u.io.Unlock()
+
+	_, err := u.conn.Write(p)
+
+	return err
+}
+
+func (u *Channel) writer() {
+
+	w := wsutil.NewWriter(u.conn, ws.StateServerSide, ws.OpText)
+	u.io.Lock()
+	defer u.io.Unlock()
+	b := bytes.Buffer{}
+	for bts := range u.out {
+		b.Write(bts)
+	}
+	_,err := w.Write(b.Bytes())
+	if err != nil {
+		hubping.unregister <- u
+	}
+
+	return
+}
+
