@@ -14,7 +14,7 @@ import (
 	"gochat/gopool"
 	"gochat/log"
 	"gochat/proto"
-	"io"
+	"net"
 	"sync"
 )
 
@@ -24,10 +24,10 @@ type Channel struct {
 	Next *Channel
 	Prev *Channel
 
-	io         sync.Mutex
+	io         sync.RWMutex
 	rpcLock         sync.Mutex
 	writerOnce sync.Once
-	conn       io.ReadWriteCloser
+	conn       net.Conn
 	pool       *gopool.Pool
 	userId     int
 	name       string
@@ -36,7 +36,7 @@ type Channel struct {
 	server *Server
 }
 
-func NewChannel(server *Server, pool *gopool.Pool, userId int, conn io.ReadWriteCloser) (c *Channel) {
+func NewChannel(server *Server, pool *gopool.Pool, userId int, conn net.Conn) (c *Channel) {
 	c = new(Channel)
 	c.server = server
 	c.pool = pool
@@ -94,7 +94,12 @@ func (u *Channel) Receive() error {
 		return err
 	}
 	if code == ws.OpPong {
-
+		log.Log.Info(">>>>>>>>pong----------")
+		return nil
+	}
+	if code == ws.OpPing {
+		log.Log.Info(">>>>>>>>ping----------")
+		u.writePong()
 		return nil
 	}
 	if message == nil {
@@ -102,7 +107,7 @@ func (u *Channel) Receive() error {
 		return nil
 	}
 	//TODO
-	log.Log.Infof(string(message))
+	log.Log.Infof("===########===%s",string(message))
 	u.rpcLock.Lock()
 	defer  u.rpcLock.Unlock()
 	pushMsgRequest := &proto.PushMsgRequest{Msg: message, UserId: u.userId}
@@ -127,11 +132,11 @@ func (u *Channel) Send(p []byte) (err error) {
 	}()
 	//u.io.Lock()
 	//defer u.io.Unlock()
-	u.writerOnce.Do(func() {
-		u.pool.Schedule(u.writer)
-	})
+	//u.writerOnce.Do(func() {
+		u.pool.Schedule(func() {u.writeRaw(p)})
+	//})
 
-	u.out <- p
+	//u.out <- p
 
 	return
 }
@@ -139,8 +144,8 @@ func (u *Channel) Send(p []byte) (err error) {
 // readRequests reads json-rpc request from connection.
 // It takes io mutex.
 func (u *Channel) readRaw() ([]byte, ws.OpCode, error) {
-	u.io.Lock()
-	defer u.io.Unlock()
+	u.io.RLock()
+	defer u.io.RUnlock()
 
 	h, code, err := wsutil.ReadClientData(u.conn)
 	if err != nil {
@@ -157,8 +162,8 @@ func (u *Channel) write(x interface{}) error {
 	w := wsutil.NewWriter(u.conn, ws.StateServerSide, ws.OpText)
 	encoder := json.NewEncoder(w)
 
-	u.io.Lock()
-	defer u.io.Unlock()
+	u.io.RLock()
+	defer u.io.RUnlock()
 
 	if err := encoder.Encode(x); err != nil {
 		return err
@@ -168,24 +173,46 @@ func (u *Channel) write(x interface{}) error {
 }
 
 func (u *Channel) writePing() {
-	w := wsutil.NewWriter(u.conn, ws.StateServerSide, ws.OpPing)
 
-	u.io.Lock()
-	defer u.io.Unlock()
-	err := w.Flush()
+
+	log.Log.Info(nameConn(u.conn) + "ping>>>>>>>>>>>")
+
+	u.io.RLock()
+	defer u.io.RUnlock()
+	err := wsutil.WriteServerMessage(u.conn, ws.OpPing, nil)
 	if err != nil {
+		log.Log.Error(err.Error())
 		Hubping.unregister <- u
 	}
 	return
 }
 
-func (u *Channel) writeRaw(p []byte) error {
-	u.io.Lock()
-	defer u.io.Unlock()
+func (u *Channel) writePong() {
 
-	_, err := u.conn.Write(p)
 
-	return err
+	log.Log.Info("pong>>>>>>>")
+	u.io.RLock()
+	defer u.io.RUnlock()
+	err := wsutil.WriteServerMessage(u.conn, ws.OpPong, nil)
+	if err != nil {
+		log.Log.Error(err.Error())
+		Hubping.unregister <- u
+	}
+	return
+}
+
+func (u *Channel) writeRaw(p []byte)  {
+	u.io.RLock()
+	defer u.io.RUnlock()
+	buf := wsutil.NewWriter(u.conn, ws.StateServerSide, ws.OpText)
+	buf.Write(p)
+	err := buf.Flush()
+	if err != nil {
+		log.Log.Error(err.Error())
+		Hubping.unregister <- u
+		return
+	}
+	return
 }
 
 func (u *Channel) writer() {

@@ -20,7 +20,7 @@ import (
 var (
 	// Make pool of X size, Y sized work queue and one pre-spawned
 	// goroutine.
-	pool = gopool.NewPool(8, 1, 4)
+	pool = gopool.NewPool(100, 1, 40)
 	//chat = NewChat(pool)
 	exit   = make(chan struct{})
 	poller netpoll.Poller

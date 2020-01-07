@@ -7,6 +7,7 @@ package connect
 import (
 	"gochat/log"
 	"gochat/proto"
+	"sync"
 	"time"
 )
 
@@ -24,6 +25,7 @@ type Hub struct {
 	// Unregister requests from clients.
 	unregister chan *Channel
 	server     *Server
+	sync.RWMutex
 }
 
 func newHub() *Hub {
@@ -39,8 +41,9 @@ func newHub() *Hub {
 
 func (h *Hub) run() {
 
-	s := h.server
-	ticker := time.NewTicker(s.Options.PingPeriod)
+	//s := h.server
+	//ticker := time.NewTicker(s.Options.PingPeriod)
+	ticker := time.NewTicker(10 * time.Second)
 	for {
 		select {
 		case client := <-h.register:
@@ -71,14 +74,24 @@ func (h *Hub) run() {
 		}
 		log.Log.Info(reply)**/
 		case <-ticker.C:
-			go func() {
-				for _, v := range h.ns {
+			defer func() {
+
+				if err := recover(); err != nil {
+					log.Log.Errorf("push error : %#v", err)
+				}
+
+			}()
+			//go func() {
+			h.RLock()
+			map1 := h.ns
+			h.RUnlock()
+				for _, v := range map1 {
 					time.Sleep(10 * time.Millisecond)
 					v.pool.Schedule(func() {
 						v.writePing()
 					})
 				}
-			}()
+			//}()
 
 		case <-h.closeChan:
 			return

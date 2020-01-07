@@ -14,7 +14,7 @@ type deadliner struct {
 }
 
 func (d deadliner) Write(p []byte) (int, error) {
-	log.Log.Info("deadliner Write")
+	log.Log.Infof("-------writer")
 	if err := d.Conn.SetWriteDeadline(time.Now().Add(d.t)); err != nil {
 		return 0, err
 	}

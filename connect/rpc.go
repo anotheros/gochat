@@ -105,7 +105,6 @@ func (rpc *RpcConnectPush) PushSingleMsg(ctx context.Context, pushMsgReq *proto.
 		bucket  *Bucket
 		channel *Channel
 	)
-	log.Log.Infof("rpc PushMsg :%+v ", &pushMsgReq)
 	if pushMsgReq == nil {
 		log.Log.Debugf("rpc PushSingleMsg() args:(%+v)", &pushMsgReq)
 		return
