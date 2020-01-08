@@ -127,6 +127,7 @@ func (ch *Channel) writePump() {
 			ch.conn.SetWriteDeadline(time.Now().Add(s.Options.WriteWait))
 			log.Log.Infof("websocket.PingMessage :%v", websocket.PingMessage)
 			if err := ch.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				log.Log.Error(err.Error())
 				return
 			}
 		}
@@ -158,14 +159,17 @@ func (ch *Channel) readPump() {
 	}()
 	log.Log.Info("readPump ...")
 	ch.conn.SetReadLimit(s.Options.MaxMessageSize)
-	ch.conn.SetReadDeadline(time.Now().Add(s.Options.PongWait))
+	ch.conn.SetReadDeadline(time.Now().Add(s.Options.WriteWait))
 	ch.conn.SetPongHandler(func(string) error {
+		log.Log.Warnf(">>>>>>>pong")
 		ch.conn.SetReadDeadline(time.Now().Add(s.Options.PongWait))
 		return nil
 	})
 
 	for {
-		_, message, err := ch.conn.ReadMessage()
+		messageTpye, message, err := ch.conn.ReadMessage()
+		log.Log.Infof("=message in %s",string(message))
+		log.Log.Infof("=message in %d",messageTpye)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Log.Errorf("===============readPump ReadMessage err:%s", err.Error())

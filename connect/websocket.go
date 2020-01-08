@@ -11,11 +11,10 @@ import (
 	"gochat/log"
 	"gochat/proto"
 	"net/http"
-	"strconv"
 )
 
 func (c *Connect) InitWebsocket() error {
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		c.serveWs(DefaultServer, w, r)
 	})
 	err := http.ListenAndServe(config.Conf.Connect.ConnectWebsocket.Bind, nil)
@@ -24,25 +23,7 @@ func (c *Connect) InitWebsocket() error {
 
 func (c *Connect) serveWs(server *Server, w http.ResponseWriter, r *http.Request) {
 
-	vars := r.URL.Query()
-	var userId int
-
-	userIdString := ""
-	if vars["userId"] != nil {
-		userIdString = vars["userId"][0]
-	}
-
-	if userIdString != "" {
-		 userIdd ,err :=strconv.Atoi(userIdString)
-		 if err != nil {
-			 log.Log.Error(userIdString)
-			 log.Log.Errorf("======%v",err)
-			 return
-		 }
-
-		 userId = userIdd
-	} else  {
-	auth := vars["auth"][0]
+	auth := r.Header.Get("Auth")
 	checkAuthRequest := &proto.CheckAuthRequest{
 		AuthToken: auth,
 	}
@@ -61,8 +42,8 @@ func (c *Connect) serveWs(server *Server, w http.ResponseWriter, r *http.Request
 
 		return
 	}
-		userId = reply.UserId
-	}
+	userId := reply.UserId
+
 	var upGrader = websocket.Upgrader{
 		ReadBufferSize:  server.Options.ReadBufferSize,
 		WriteBufferSize: server.Options.WriteBufferSize,
