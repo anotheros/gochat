@@ -159,7 +159,8 @@ func (ch *Channel) readPump() {
 	}()
 	log.Log.Info("readPump ...")
 	ch.conn.SetReadLimit(s.Options.MaxMessageSize)
-	ch.conn.SetReadDeadline(time.Now().Add(s.Options.WriteWait))
+	ch.conn.SetReadDeadline(time.Now().Add(s.Options.PongWait))
+	//ch.conn.SetReadDeadline(time.Now().Add(s.Options.WriteWait))
 	ch.conn.SetPongHandler(func(string) error {
 		log.Log.Warnf(">>>>>>>pong")
 		ch.conn.SetReadDeadline(time.Now().Add(s.Options.PongWait))

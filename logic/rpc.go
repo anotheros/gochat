@@ -253,6 +253,9 @@ func (rpc *RpcLogic) Push(ctx context.Context, sendData *proto.Send, reply *prot
 		return
 	}
 	serverId := RedisSessClient.Get(userSidKey).Val()
+	if serverId == "" {
+		return
+	}
 	var serverIdInt int
 	serverIdInt, err = strconv.Atoi(serverId)
 	if err != nil {

@@ -19,9 +19,9 @@ type Server struct {
 }
 
 type ServerOptions struct {
-	WriteWait       time.Duration
-	PongWait        time.Duration
-	PingPeriod      time.Duration
+	WriteWait       time.Duration //10
+	PongWait        time.Duration //60
+	PingPeriod      time.Duration //54
 	MaxMessageSize  int64
 	ReadBufferSize  int
 	WriteBufferSize int
