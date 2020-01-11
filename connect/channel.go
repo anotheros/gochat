@@ -89,8 +89,10 @@ func (ch *Channel) onConnect() error {
 // It blocks until full message received.
 func (u *Channel) Receive() error {
 	message, code, err := u.readRaw()
+	log.Log.Infof("===########===%d",code)
 	if err != nil {
 		u.conn.Close()
+		log.Log.Errorf("===########===%#v",err.Error())
 		return err
 	}
 	if code == ws.OpPong {
@@ -152,7 +154,7 @@ func (u *Channel) readRaw() ([]byte, ws.OpCode, error) {
 		return nil, code, err
 	}
 	if code.IsControl() {
-		return nil, code, nil //TODO
+		return nil, code, nil
 	}
 
 	return h, code, nil
@@ -175,11 +177,12 @@ func (u *Channel) write(x interface{}) error {
 func (u *Channel) writePing() {
 
 
-	log.Log.Info(nameConn(u.conn) + "ping>>>>>>>>>>>")
+	log.Log.Info(nameConn(u.conn) + " ping>>>>>>>>>>>")
 
 	u.io.RLock()
 	defer u.io.RUnlock()
-	err := wsutil.WriteServerMessage(u.conn, ws.OpPing, nil)
+	 b :=[]byte("1")
+	err := wsutil.WriteServerMessage(u.conn, ws.OpPing, b)
 	if err != nil {
 		log.Log.Error(err.Error())
 		Hubping.unregister <- u

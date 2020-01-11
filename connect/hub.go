@@ -43,7 +43,7 @@ func (h *Hub) run() {
 
 	//s := h.server
 	//ticker := time.NewTicker(s.Options.PingPeriod)
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(1 * time.Second)
 	for {
 		select {
 		case client := <-h.register:
@@ -87,6 +87,7 @@ func (h *Hub) run() {
 			h.RUnlock()
 				for _, v := range map1 {
 					time.Sleep(10 * time.Millisecond)
+					log.Log.Infof(nameConn(v.conn))
 					v.pool.Schedule(func() {
 						v.writePing()
 					})

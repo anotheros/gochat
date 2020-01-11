@@ -31,3 +31,8 @@ func TestChan(t *testing.T) {
 	}
 	time.Sleep(100 * time.Second)
 }
+
+func TestByte(t *testing.T)  {
+	b:=[]byte{0x88, 0x2, 0x4c, 0x54}
+	fmt.Println(string(b))
+}

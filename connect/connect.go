@@ -21,7 +21,8 @@ var DefaultServer *Server
 var (
 	workers   = 128
 	queue     = 1
-	ioTimeout = time.Millisecond * 12000
+	ioTimeout = time.Millisecond * 100
+	ioReadTimeout = time.Second * 60
 	Hubping   *Hub
 )
 

@@ -27,7 +27,7 @@ $(document).ready(function () {
             swal("sorry, exception!");
         }
     });
-     websocket = new WebSocket(socketUrl + "?auth=" + auth);
+     websocket = new WebSocket(socketUrl );
     let data = {"authToken": getLocalStorage("authToken"), "roomId": 1};
     let data2 ={ver:1,op:3,seq:"123",body:{msg: "大家好", roomId: 1}}
     var timestamp = (new Date()).valueOf().toString()

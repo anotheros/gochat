@@ -11,10 +11,12 @@ import (
 type deadliner struct {
 	net.Conn
 	t time.Duration
+	ioReadTimeout time.Duration
 }
 
 func (d deadliner) Write(p []byte) (int, error) {
-	log.Log.Infof("-------writer")
+	log.Log.Infof("-------writer,%s, %#v" ,nameConn(d),p)
+	log.Log.Infof("-------writer,%s, %s" ,nameConn(d),string(p))
 	if err := d.Conn.SetWriteDeadline(time.Now().Add(d.t)); err != nil {
 		return 0, err
 	}
@@ -26,7 +28,7 @@ func (d deadliner) Write(p []byte) (int, error) {
 }
 
 func (d deadliner) Read(p []byte) (int, error) {
-	if err := d.Conn.SetReadDeadline(time.Now().Add(d.t)); err != nil {
+	if err := d.Conn.SetReadDeadline(time.Now().Add(d.ioReadTimeout)); err != nil {
 		return 0, err
 	}
 	return d.Conn.Read(p)

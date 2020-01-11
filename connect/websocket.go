@@ -60,21 +60,13 @@ func login(auth string) (int, error) {
 func handle(conn net.Conn) {
 	// NOTE: we wrap conn here to show that ws could work with any kind of
 	// io.ReadWriter.
-	safeConn := deadliner{conn, ioTimeout}
+	safeConn := deadliner{conn, DefaultServer.Options.WriteWait,DefaultServer.Options.PongWait}
 	var userId int
 	u := ws.Upgrader{
 		OnHeader: func(key, value []byte) error {
 			if string(key) != "Auth" {
 				return nil
 			}
-			/**ok := httphead.ScanCookie(value, func(key, value []byte) bool {
-				// Check session here or do some other stuff with cookies.
-				// Maybe copy some values for future use.
-				return false
-			})
-			if ok {
-				return nil
-			}**/
 			if string(key) == "Auth" {
 
 				auth := string(value)
@@ -94,6 +86,7 @@ func handle(conn net.Conn) {
 			)
 		},
 	}
+	userId = 6
 	// Zero-copy upgrade to WebSocket connection.
 	hs, err := u.Upgrade(safeConn)
 	if err != nil {
