@@ -16,6 +16,7 @@ import (
 	"gochat/proto"
 	"net"
 	"sync"
+	"time"
 )
 
 //in fact, Channel it's a user Connect session
@@ -118,6 +119,7 @@ func (u *Channel) Receive() error {
 		log.Log.Errorf("===========%#v", err)
 	}
 	log.Log.Debugf("%#v",reply)
+	RedisClient.SetNX(fmt.Sprintf("ping_%d", u.userId), "", 29*time.Second).Result()
 
 
 	return nil
@@ -137,6 +139,7 @@ func (u *Channel) Send(p []byte) (err error) {
 	//u.writerOnce.Do(func() {
 		u.pool.Schedule(func() {u.writeRaw(p)})
 	//})
+	 RedisClient.SetNX(fmt.Sprintf("ping_%d", u.userId), "", 29*time.Second).Result()
 
 	//u.out <- p
 

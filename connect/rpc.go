@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/go-redis/redis"
 	"github.com/rcrowley/go-metrics"
 	"github.com/smallnest/rpcx/client"
 	"github.com/smallnest/rpcx/server"
@@ -95,6 +96,22 @@ func (c *Connect) InitConnectRpcServer() (err error) {
 		go c.createConnectRpcServer(network, addr)
 	}
 	return
+}
+
+var RedisClient *redis.Client
+
+
+func (c *Connect) InitRedisClient() (err error) {
+	redisOpt := tools.RedisOption{
+		Address:  config.Conf.Common.CommonRedis.RedisAddress,
+		Password: config.Conf.Common.CommonRedis.RedisPassword,
+		Db:       config.Conf.Common.CommonRedis.Db,
+	}
+	RedisClient = tools.GetRedisInstance(redisOpt)
+	if pong, err := RedisClient.Ping().Result(); err != nil {
+		log.Log.Infof("RedisCli Ping Result pong: %s,  err: %s", pong, err)
+	}
+	return err
 }
 
 type RpcConnectPush struct {

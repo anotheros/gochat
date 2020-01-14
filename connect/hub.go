@@ -5,6 +5,7 @@
 package connect
 
 import (
+	"fmt"
 	"gochat/log"
 	"gochat/proto"
 	"sync"
@@ -41,9 +42,9 @@ func newHub() *Hub {
 
 func (h *Hub) run() {
 
-	//s := h.server
-	//ticker := time.NewTicker(s.Options.PingPeriod)
-	ticker := time.NewTicker(1 * time.Second)
+	s := h.server
+	ticker := time.NewTicker(s.Options.PingPeriod)
+	//ticker := time.NewTicker(1 * time.Second)
 	for {
 		select {
 		case client := <-h.register:
@@ -85,13 +86,17 @@ func (h *Hub) run() {
 			h.RLock()
 			map1 := h.ns
 			h.RUnlock()
-				for _, v := range map1 {
-					time.Sleep(10 * time.Millisecond)
-					log.Log.Infof(nameConn(v.conn))
+			for _, v := range map1 {
+				time.Sleep(10 * time.Millisecond)
+				log.Log.Infof(nameConn(v.conn))
+				b, err := RedisClient.SetNX(fmt.Sprintf("ping_%d", v.userId), "", 29*time.Second).Result()
+				if err == nil && b {
 					v.pool.Schedule(func() {
 						v.writePing()
 					})
 				}
+
+			}
 			//}()
 
 		case <-h.closeChan:

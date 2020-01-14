@@ -83,6 +83,9 @@ func (c *Connect) Run() {
 	if err := c.InitConnectRpcServer(); err != nil {
 		log.Log.Panicf("InitConnectRpcServer Fatal error: %s \n", err)
 	}
+	if err := c.InitRedisClient(); err != nil {
+		log.Log.Panicf("InitConnectRpcServer Fatal error: %s \n", err)
+	}
 	Hubping = newHub()
 	go Hubping.run()
 	//start Connect layer server handler persistent connection
